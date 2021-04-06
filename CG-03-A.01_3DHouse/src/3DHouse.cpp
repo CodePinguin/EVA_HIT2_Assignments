@@ -31,6 +31,7 @@ using namespace std;
 GLint PROGRAM_ID = 0;
 GLint MODELVIEW_MAT4_LOCATION = 0;
 GLint PROJECTION_MAT4_LOCATION = 0;
+GLint COLOR_VEC3_LOCATION = 0;
 
 GLenum POLYGON_MODE = GL_FRONT_AND_BACK;
 bool USE_WIREFRAME = false;
@@ -45,14 +46,17 @@ const float WIDTH = 5.0f;  // ground = width * 2
 const float HEIGHT = 3.0f; // height of roof
 
 // TODO: declare two VAOs for drawing ground/fence and house/roof models seperately
-GLuint GROUND_FENCE_VAO = 0;
-GLuint HOUSE_ROOF_VAO = 0;
+GLuint VAO[2];
 
 // TODO: add additional globals for fence, house and roof indices count
 GLuint GROUND_INDICES_COUNT = 0;
 GLuint FENCE_INDICES_COUNT = 0;
 GLuint HOUSE_INDICES_COUNT = 0;
 GLuint ROOF_INDICES_COUNT = 0;
+
+GLuint64 FENCE_DRAW_OFFSET = 0;
+GLuint64 ROOF_DRAW_OFFSET = 0;
+
 
 
 
@@ -73,19 +77,47 @@ void glutDisplayCB(void)
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
 
     // bind ground and fence Vertex Array Object to current drawing context
-    glBindVertexArray(GROUND_FENCE_VAO);
+    glBindVertexArray(VAO[0]);
 
     // indexed drawing of ground
+    //glEnable(GL_POLYGON_OFFSET_FILL); // important when two surfaces lay on each other (e.g.: ground and house)
+    //glPolygonOffset(-0.01f, 1.0f);
     glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+    //glDisable(GL_POLYGON_OFFSET_FILL);
+
 
     // TODO: add indexed drawing of fence
-    glDrawElements(GL_TRIANGLES, FENCE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+    bool reenable = false;  // local variable to re-enable culling 
+
+    if (glIsEnabled(GL_CULL_FACE)) // fence must not be culled
+    {
+        glDisable(GL_CULL_FACE);
+        reenable = true;
+    }
+
+    // indexed drawing of fence
+    glDrawElements(GL_TRIANGLE_STRIP, FENCE_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(FENCE_DRAW_OFFSET));
+
+    if (reenable) // re-enable culling for rest of model
+    {
+        glEnable(GL_CULL_FACE);
+        reenable = false;
+    }
 
     // TODO: add indexed drawing of house and roof
-    glBindVertexArray(HOUSE_ROOF_VAO);
-    glDrawElements(GL_TRIANGLES, HOUSE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
-    glDrawElements(GL_TRIANGLES, ROOF_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+    glBindVertexArray(VAO[1]);
 
+    // disable color vertex attribute to set default color for house drawing
+    glDisableVertexAttribArray(COLOR_VEC3_LOCATION); // turning-off of the interpolated colors
+
+    // indexed drawing of house
+    glDrawElements(GL_TRIANGLE_STRIP, HOUSE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+
+    // re-enable color vertex attribute to use color array for roof drawing
+    glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
+
+    // indexed drawing of roof
+    glDrawElements(GL_TRIANGLE_FAN, ROOF_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(ROOF_DRAW_OFFSET));
 
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();
@@ -104,16 +136,11 @@ void initModel(float width, float height)
          width,  width, 0.0f, 1.0f,  // v2
         -width,  width, 0.0f, 1.0f,  // v3
 
-        //-width, -width, 0.0f, 1.0f,  // v4 fence boden, für bessere Farbdarstellung
-        // width, -width, 0.0f, 1.0f,  // v5
-        // width,  width, 0.0f, 1.0f,  // v6
-        //-width,  width, 0.0f, 1.0f,  // v7
-
-        -width, -width, 1.0f, 1.0f,  // v8 fence
-         width, -width, 1.0f, 1.0f,  // v9
-         width,  width, 1.0f, 1.0f,  // v10
-        -width,  width, 1.0f, 1.0f,  // v11
-    // TODO: add fence vertices
+        // TODO: add fence vertices
+        -width, -width, 1.0f, 1.0f,  // v4 fence
+         width, -width, 1.0f, 1.0f,  // v5
+         width,  width, 1.0f, 1.0f,  // v6
+        -width,  width, 1.0f, 1.0f   // v7
     };
 
     // define ground and fence colors, each vertex has his own color definition (RGB)
@@ -124,16 +151,11 @@ void initModel(float width, float height)
         0.0f, 0.4f, 0.0f,
         0.0f, 0.4f, 0.0f,
 
-        //0.8f, 0.5f, 0.0f, // fence
-        //0.8f, 0.5f, 0.0f,
-        //0.8f, 0.5f, 0.0f,
-        //0.8f, 0.5f, 0.0f,
-
-        0.8f, 0.5f, 0.0f, // fence
-        0.8f, 0.5f, 0.0f,
-        0.8f, 0.5f, 0.0f,
-        0.8f, 0.5f, 0.0f
-    // TODO: add fence colors
+        // TODO: add fence colors
+        0.0f, 0.6f, 0.0f, // fence
+        0.0f, 0.7f, 0.0f,
+        0.0f, 0.8f, 0.0f,
+        0.0f, 0.9f, 0.0f
     };
 
     // definition of ground face indices (for GL_TRIANGLES --> 6)
@@ -143,19 +165,11 @@ void initModel(float width, float height)
         1, 0, 2
     };
     GROUND_INDICES_COUNT = sizeof(ground_indices) / sizeof(ground_indices[0]);
+    FENCE_DRAW_OFFSET = sizeof(ground_indices);
 
-// TODO: add definition of fence indices
+    // TODO: add definition of fence indices
     GLushort fence_indices[] =
     {
-        /*4, 8, 9,
-        5, 4, 9,
-        5, 9, 10,
-        6, 5, 10,
-        6, 10, 11,
-        7, 6, 11,
-        7, 11, 8,
-        7, 4, 8*/
-
         0, 4, 5,
         1, 0, 5,
         1, 5, 6,
@@ -168,7 +182,7 @@ void initModel(float width, float height)
     FENCE_INDICES_COUNT = sizeof(fence_indices) / sizeof(fence_indices[0]);
 
 
-// TODO: add definition of house and roof vertices
+    // TODO: add definition of house and roof vertices
     float side = width / 2.0f;
     GLfloat house_vertices[] =
     {
@@ -177,16 +191,16 @@ void initModel(float width, float height)
          side,  side, 0.0f, 1.0f,  // v2
         -side,  side, 0.0f, 1.0f,  // v3
 
-        -side, -side, 5.0f, 1.0f,  // v4 house up
-         side, -side, 5.0f, 1.0f,  // v5
-         side,  side, 5.0f, 1.0f,  // v6
-        -side,  side, 5.0f, 1.0f,  // v7
+        -side, -side, width, 1.0f,  // v4 house up
+         side, -side, width, 1.0f,  // v5
+         side,  side, width, 1.0f,  // v6
+        -side,  side, width, 1.0f,  // v7
 
-         0.0f, 0.0f, 7.0f, 1.0f //v12 roof
+         0.0f, 0.0f, 7.0f, 1.0f    //v12 roof
     };
 
 
-// TODO: add definition of house and roof colors
+    // TODO: add definition of house and roof colors
     GLfloat house_colors[] =
     {
         0.0f, 0.5f, 0.5f, // house
@@ -203,7 +217,7 @@ void initModel(float width, float height)
     };
 
 
-// TODO: add definition of house face indices
+    // TODO: add definition of house face indices
     GLushort house_indices[] =
     {
         0, 3, 2,
@@ -216,11 +230,20 @@ void initModel(float width, float height)
         0, 3, 4,
         0, 4, 5,
         1, 0, 5,
+
+        /* draw bottom of house to demo z-buffer fighting
+        ,0xFFFF,
+        0, 1, 3, 2
+        //*/
+
     };
+    //glPrimitiveRestartIndex(0xFFFF); //draw bottom of house to demo z-buffer fighting
+    //glEnable(GL_PRIMITIVE_RESTART);
     HOUSE_INDICES_COUNT = sizeof(house_indices) / sizeof(house_indices[0]);
+    ROOF_DRAW_OFFSET = sizeof(house_indices);
 
 
-// TODO: add definition of roof face indices
+    // TODO: add definition of roof face indices
     GLushort roof_indices[] =
     {
         4, 8, 5,
@@ -230,25 +253,18 @@ void initModel(float width, float height)
     };
     ROOF_INDICES_COUNT = sizeof(roof_indices) / sizeof(roof_indices[0]);
 
-    // create global Vertex Array Objects /////////////////////////////////////////////////////////
-// TODO: create two VAOs for drawing ground/fence and house/roof models seperately
-    glGenVertexArrays(1, &GROUND_FENCE_VAO);
-    glGenVertexArrays(1, &HOUSE_ROOF_VAO);
+    // TODO: create two VAOs for drawing ground/fence and house/roof models seperately
+    glGenVertexArrays(2, &VAO[0]);
 
     // create local vertex buffer objects
-// TODO: create two vbos for drawing ground/fence and house/roof models seperately
-    GLuint GROUND_FENCE_VBO;
-    GLuint HOUSE_ROOF_VBO;
-    glGenBuffers(1, &GROUND_FENCE_VBO);
-    glGenBuffers(1, &HOUSE_ROOF_VBO);
+    // TODO: create two vbos for drawing ground/fence and house/roof models seperately
+    GLuint vbo[2];
+    glGenBuffers(2, &vbo[0]);
 
     // create local element buffer objects
-// TODO: create two ebos for drawing ground/fence and house/roof models seperately
-    GLuint GROUND_FENCE_EBO;
-    GLuint HOUSE_ROOF_EBO;
-
-    glGenBuffers(1, &GROUND_FENCE_EBO);
-    glGenBuffers(1, &HOUSE_ROOF_EBO);
+    // TODO: create two ebos for drawing ground/fence and house/roof models seperately
+    GLuint ebo[2];
+    glGenBuffers(2, &ebo[0]);
 
     // get location of position and color vertex attributes
     // (requires that the shader program has been compiled already!)
@@ -257,10 +273,10 @@ void initModel(float width, float height)
 
 
     // bind Vertex Array Object for ground and fence //////////////////////////////////////////////
-    glBindVertexArray(GROUND_FENCE_VAO);
+    glBindVertexArray(VAO[0]);
 
     // setup vertex buffer object
-    glBindBuffer(GL_ARRAY_BUFFER, GROUND_FENCE_VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(ground_vertices) + sizeof(ground_colors), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ground_vertices), ground_vertices);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(ground_vertices), sizeof(ground_colors), ground_colors);
@@ -272,33 +288,38 @@ void initModel(float width, float height)
     glEnableVertexAttribArray(vecColor);
 
     // setup element buffer object (indices) for ground and fence
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GROUND_FENCE_EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[0]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ground_indices) + sizeof(fence_indices), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(ground_indices), ground_indices);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ground_indices), sizeof(fence_indices), fence_indices);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, FENCE_DRAW_OFFSET, sizeof(fence_indices), fence_indices);
+
+
 
 
 
     // TODO: bind vertex array object for house and roof
-     glBindVertexArray(HOUSE_ROOF_VAO);
+     glBindVertexArray(VAO[1]);
 
     // TODO: setup Vertex buffer object for house and roof
-    glBindBuffer(GL_ARRAY_BUFFER, HOUSE_ROOF_VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(house_vertices) + sizeof(house_colors), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(house_vertices), house_vertices);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(house_vertices), sizeof(house_colors), house_colors);
 
+    // define color vertex attribute default draw color if array is disabled
+    glVertexAttrib3f(COLOR_VEC3_LOCATION, 1.0f, 1.0f, 0.0f);
+
     // setup vertex attributes (house and roof)
     glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));
     glEnableVertexAttribArray(vecPosition);
-    glVertexAttribPointer(vecColor, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(house_vertices)));
-    glEnableVertexAttribArray(vecColor);
+    glVertexAttribPointer(COLOR_VEC3_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(house_vertices)));
+    glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
 
     // setup element buffer object (indices) for house and roof
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, HOUSE_ROOF_EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(house_indices) + sizeof(roof_indices), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(house_indices), house_indices);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, sizeof(house_indices), sizeof(roof_indices), roof_indices);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, ROOF_DRAW_OFFSET, sizeof(roof_indices), roof_indices);
 }
 
 
@@ -434,6 +455,7 @@ void glutMenuCB1(int key)
             break;
         }
     }
+    glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);
     glutPostRedisplay();
 }
 

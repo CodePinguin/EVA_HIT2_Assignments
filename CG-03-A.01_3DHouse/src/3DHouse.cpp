@@ -115,7 +115,8 @@ void glutDisplayCB(void)
     glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
 
     // indexed drawing of roof
-    glDrawElements(GL_TRIANGLE_FAN, ROOF_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(ROOF_DRAW_OFFSET));
+    //glDrawElements(GL_TRIANGLE_FAN, ROOF_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(ROOF_DRAW_OFFSET));
+    glDrawElements(GL_TRIANGLES, ROOF_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(ROOF_DRAW_OFFSET));
 
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();
@@ -245,8 +246,13 @@ void initModel(float width, float height)
     // TODO: add definition of roof face indices
     GLushort roof_indices[] =
     {
-        8, 4, 7,
-        6, 5, 4 // usage of GL_TRIANGLE_FAN for different vertex order see line 118 (the others use GL_TRIANGLES)
+        // 8, 4, 7,
+        // 6, 5, 4 // usage of GL_TRIANGLE_FAN for different vertex order see line 118 (the others use GL_TRIANGLES)
+
+        4, 8, 5,
+        5, 8, 6,
+        6, 8, 7,
+        7, 8, 4 // when using GL_TRIANGLES in line 118
     };
     ROOF_INDICES_COUNT = sizeof(roof_indices) / sizeof(roof_indices[0]);
 

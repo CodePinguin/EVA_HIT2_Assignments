@@ -1,6 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////////////////////////
-// Assignment: CG-03-A.01_3DHouse [Version 3.1 - FLTK-1.4.x / C++17 Update]                      //
-//             (Non-Indexd drawing not supported on Apple)                                       //
+// Assignment: CG-03-A.01_3DHouse [by Celina]                                                    //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -59,7 +58,6 @@ GLuint64 ROOF_DRAW_OFFSET = 0;
 
 
 
-
 void glutDisplayCB(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
@@ -85,7 +83,6 @@ void glutDisplayCB(void)
     glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
     //glDisable(GL_POLYGON_OFFSET_FILL);
 
-
     // TODO: add indexed drawing of fence
     bool reenable = false;  // local variable to re-enable culling 
 
@@ -96,7 +93,7 @@ void glutDisplayCB(void)
     }
 
     // indexed drawing of fence
-    glDrawElements(GL_TRIANGLE_STRIP, FENCE_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(FENCE_DRAW_OFFSET));
+    glDrawElements(GL_TRIANGLES, FENCE_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(FENCE_DRAW_OFFSET));
 
     if (reenable) // re-enable culling for rest of model
     {
@@ -105,13 +102,14 @@ void glutDisplayCB(void)
     }
 
     // TODO: add indexed drawing of house and roof
+    // bind house/roof VAO to current drawing context
     glBindVertexArray(VAO[1]);
 
     // disable color vertex attribute to set default color for house drawing
     glDisableVertexAttribArray(COLOR_VEC3_LOCATION); // turning-off of the interpolated colors
 
     // indexed drawing of house
-    glDrawElements(GL_TRIANGLE_STRIP, HOUSE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+    glDrawElements(GL_TRIANGLES, HOUSE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
 
     // re-enable color vertex attribute to use color array for roof drawing
     glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
@@ -122,6 +120,7 @@ void glutDisplayCB(void)
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();
 }
+
 
 
 
@@ -137,10 +136,10 @@ void initModel(float width, float height)
         -width,  width, 0.0f, 1.0f,  // v3
 
         // TODO: add fence vertices
-        -width, -width, 1.0f, 1.0f,  // v4 fence
-         width, -width, 1.0f, 1.0f,  // v5
-         width,  width, 1.0f, 1.0f,  // v6
-        -width,  width, 1.0f, 1.0f   // v7
+        -width, -width, 2.0f, 1.0f,  // v4 fence
+         width, -width, 2.0f, 1.0f,  // v5
+         width,  width, 2.0f, 1.0f,  // v6
+        -width,  width, 2.0f, 1.0f   // v7
     };
 
     // define ground and fence colors, each vertex has his own color definition (RGB)
@@ -196,7 +195,7 @@ void initModel(float width, float height)
          side,  side, width, 1.0f,  // v6
         -side,  side, width, 1.0f,  // v7
 
-         0.0f, 0.0f, 7.0f, 1.0f    //v12 roof
+         0.0f, 0.0f, 7.0f, 1.0f    //v8 roof
     };
 
 
@@ -246,10 +245,8 @@ void initModel(float width, float height)
     // TODO: add definition of roof face indices
     GLushort roof_indices[] =
     {
-        4, 8, 5,
-        5, 8, 6,
-        6, 8, 7,
-        7, 8, 4
+        8, 4, 7,
+        6, 5, 4 // usage of GL_TRIANGLE_FAN for different vertex order see line 118 (the others use GL_TRIANGLES)
     };
     ROOF_INDICES_COUNT = sizeof(roof_indices) / sizeof(roof_indices[0]);
 
@@ -269,7 +266,7 @@ void initModel(float width, float height)
     // get location of position and color vertex attributes
     // (requires that the shader program has been compiled already!)
     GLuint vecPosition = glGetAttribLocation(PROGRAM_ID, "vecPosition");
-    GLuint vecColor = glGetAttribLocation(PROGRAM_ID, "vecColor");
+    COLOR_VEC3_LOCATION = glGetAttribLocation(PROGRAM_ID, "vecColor");
 
 
     // bind Vertex Array Object for ground and fence //////////////////////////////////////////////
@@ -284,8 +281,8 @@ void initModel(float width, float height)
     // setup vertex attributes
     glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));
     glEnableVertexAttribArray(vecPosition);
-    glVertexAttribPointer(vecColor, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(ground_vertices)));
-    glEnableVertexAttribArray(vecColor);
+    glVertexAttribPointer(COLOR_VEC3_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(ground_vertices)));
+    glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
 
     // setup element buffer object (indices) for ground and fence
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[0]);

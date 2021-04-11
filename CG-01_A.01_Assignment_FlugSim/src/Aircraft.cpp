@@ -1,11 +1,13 @@
-#include "Aircraft.h"
+#include "../inc/Aircraft.h"
 
-double * Aircraft::getVertices() 
+
+double* Aircraft::getVertices()
 {
-
+	//test
+	return nullptr;
 }
 
-double Aircraft::getVel()
+void Aircraft::increaseVel()
 {
 	velocity++;
 }

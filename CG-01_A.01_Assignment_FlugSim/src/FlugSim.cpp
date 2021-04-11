@@ -26,7 +26,7 @@ using namespace std;
 #include "../../_COMMON/inc/UtilGLSL.h"
 
 
-//#include "Aircraft.h"
+#include "../inc/Aircraft.h"
 
 // application global variables and constants /////////////////////////////////////////////////////
 GLint PROGRAM_ID = 0;

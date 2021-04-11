@@ -79,7 +79,8 @@ void glutDisplayCB(void)
 
     // indexed drawing of ground
     //glEnable(GL_POLYGON_OFFSET_FILL); // important when two surfaces lay on each other (e.g.: ground and house)
-    //glPolygonOffset(-0.01f, 1.0f);
+    //glPolygonOffset(-0.01f, 1.0f); // hier wird einfach ein Stück vom Boden "abgeschnitten", durch den Offset
+    // wenn man einen positiven Wert wählt, wird der bodem vom Haus angezeigt
     glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
     //glDisable(GL_POLYGON_OFFSET_FILL);
 
@@ -310,7 +311,7 @@ void initModel(float width, float height)
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(house_vertices), sizeof(house_colors), house_colors);
 
     // define color vertex attribute default draw color if array is disabled
-    glVertexAttrib3f(COLOR_VEC3_LOCATION, 1.0f, 1.0f, 0.0f);
+    glVertexAttrib3f(COLOR_VEC3_LOCATION, 1.0f, 1.0f, 0.0f); // defaul Farbe ist hier auf gelb gesetzt
 
     // setup vertex attributes (house and roof)
     glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));

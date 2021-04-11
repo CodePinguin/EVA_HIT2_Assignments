@@ -1,5 +1,5 @@
 ﻿///////////////////////////////////////////////////////////////////////////////////////////////////
-// Demo: CG-03-D.03_SimpleAnimation [Version 3.1 - FLTK-1.4.x / C++17 Update]                    //
+// Demo: CG-04_D.04_GouraudShader [Version 3.1 - FLTK-1.4.x / C++17 Update]                      //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -11,13 +11,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/constants.hpp>
 
 
 // system includes ////////////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include <string>
-#include <stack>
 using namespace std;
 
 
@@ -26,7 +24,7 @@ using namespace std;
 #include "../../_COMMON/inc/TrackBall.h"
 #include "../../_COMMON/inc/UtilOpenGL.h"
 #include "../../_COMMON/inc/UtilGLSL.h"
-#include "../../_COMMON/inc/vbosphere.h"
+#include "../../_COMMON/inc/vboteapot.h"
 
 
 // application global variables and constants /////////////////////////////////////////////////////
@@ -34,30 +32,8 @@ GLint PROGRAM_ID = 0;
 GLint MODELVIEW_MAT4_LOCATION = 0;
 GLint PROJECTION_MAT4_LOCATION = 0;
 
-float MOVE_X = 0.0f;
-float MOVE_Y = 0.0f;
-float MOVE_Z = 0.0f;
-
-bool ANIMATION_RUNNING = false;
-int SPEED = 80;
-
-VBOSphere* TheSphere = nullptr;
-
-
-
-void glutTimerCB(int timer_id)
-/////////////////////////////////////////////////////////////////////////////////////////
-{
-    static float alpha = 0.0f;
-    alpha += 0.2f;
-    //MOVE_X = 4 * sin(alpha);
-    //cout << "MOVE_X: " << MOVE_X << endl;
-
-    // reset timer if the animation is running
-    if (ANIMATION_RUNNING) glutTimerFunc(SPEED, glutTimerCB, 0);
-
-    glutPostRedisplay();
-}
+glm::mat4 TheCameraView(1.0f);
+VBOTeapot* TheTeapot = nullptr;
 
 
 
@@ -67,20 +43,24 @@ void glutDisplayCB(void)
     // clear window background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // setup modelview matrix
-    glm::mat4 modelview(1.0f);
+    // setup modelview matrix, init with camera view
+    glm::mat4 modelview = TheCameraView;
 
     // apply trackball transformation to modelview matrix
     glm::mat4 mouse = TrackBall::getTransformation();
     modelview = modelview * mouse;
 
+    // move teapot into origin and rotate 270 degree around x-axis (post multiply order)
+    glm::mat4 teapot_matrix(1.0f);
+    teapot_matrix = glm::rotate(teapot_matrix, glm::radians<float>(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    teapot_matrix = glm::translate(teapot_matrix, glm::vec3(0.0f, 0.0f, -1.5f));
+    modelview = modelview * teapot_matrix;
+
     // set modelview transformation matrix in vertex shader
-    modelview = glm::rotate(modelview, glm::radians<float>(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    modelview = glm::scale(modelview, glm::vec3(2.0f, 2.0f, 2.0f));
-    modelview = glm::translate(modelview, glm::vec3(MOVE_X, MOVE_Y, 0.0f));
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
 
-    TheSphere->draw();
+    // draw teapot with offset (i.e. origin centered)
+    TheTeapot->draw();
 
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();
@@ -91,7 +71,9 @@ void glutDisplayCB(void)
 void initModel(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    TheSphere = new VBOSphere(1.0f, 50, 25);
+    glm::mat4 lidTransform(1.0f);
+    lidTransform = glm::scale(lidTransform, glm::vec3(1.08f, 1.08f, 1.0f));
+    TheTeapot = new VBOTeapot(16, lidTransform);
 }
 
 
@@ -100,25 +82,86 @@ void initRendering()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     // set background color
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
     // clear window background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // set rendering mode
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glEnable(GL_CULL_FACE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
+
+    // define fixed light source position and properties (in eye space coordinates)
+    glm::vec4 position(0.0f, 0.0f, 20.0f, 1.0f);
+    glm::vec4  ambient(0.8f, 0.8f,  0.8f, 1.0f);
+    glm::vec4  diffuse(0.8f, 0.8f,  0.8f, 1.0f);
+    glm::vec4 specular(1.0f, 1.0f,  1.0f, 1.0f);
+
+    // define material properties
+    glm::vec4  mat_ambient(0.1f, 0.1f, 0.1f, 1.0f);
+    glm::vec4  mat_diffuse(0.1f, 0.1f, 0.9f, 1.0f);
+    glm::vec4 mat_specular(1.0f, 1.0f, 1.0f, 1.0f);
+    GLfloat  mat_shininess = 64.0f;
+
+    // setup Uniform Buffer Objects (UBO)
+    GLuint ubo[2];
+    glGenBuffers(2, &ubo[0]);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 4, nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(position));
+    glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(ambient));
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(diffuse));
+    glBufferSubData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(specular));
+
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo[1]);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 3 + sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(mat_ambient));
+    glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(mat_diffuse));
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(mat_specular));
+    glBufferSubData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::vec4), sizeof(GLfloat), &mat_shininess);
+
+
+    // bind uniform buffer objects to uniform blocks using the shader provided binding point
+    GLuint ubo_index = 0;
+    GLint ubo_binding = 0;
+
+    ubo_index = glGetUniformBlockIndex(PROGRAM_ID, "LightProperties");
+    glGetActiveUniformBlockiv(PROGRAM_ID, ubo_index, GL_UNIFORM_BLOCK_BINDING, &ubo_binding);
+    glBindBufferBase(GL_UNIFORM_BUFFER, ubo_binding, ubo[0]);
+
+    ubo_index = glGetUniformBlockIndex(PROGRAM_ID, "MaterialProperties");
+    glGetActiveUniformBlockiv(PROGRAM_ID, ubo_index, GL_UNIFORM_BLOCK_BINDING, &ubo_binding);
+    glBindBufferBase(GL_UNIFORM_BUFFER, ubo_binding, ubo[1]);
+
+    // setup the camera view matrix
+    TheCameraView = glm::lookAt(glm::vec3(0.0f, 0.0f, 8.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // get modelview matrix uniform location
     MODELVIEW_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matModelView");
 
     // get projection matrix uniform location
     PROJECTION_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matProjection");
+}
 
-    // setup orthographic projection matrix
-    glm::mat4 projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, -10.0f, 10.0f);
+
+
+void glutResizeCB(int width, int height)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+{
+    // this function is called before the window's first display
+
+    glViewport(0, 0, (GLsizei)width, (GLsizei)height);
+
+    // adjust aspect value for new viewport size
+    GLfloat aspect = (GLfloat)width / (GLfloat)height;
+
+    // setup perspective projection matrix for new viewport size
+    glm::mat4 projection = glm::perspective(glm::radians<float>(60.0f), aspect, 1.0f, 20.0f);
     glUniformMatrix4fv(PROJECTION_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glutPostRedisplay();
 }
 
 
@@ -127,49 +170,14 @@ void glutMenuCB(int key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     switch (key)
-        {
-        case 'u':
-        {
-            MOVE_Y += 0.1;
-            break;
-        }
-        case 'j':
-        {
-            MOVE_Y -= 0.1;
-            break;
-        }
+    {
         case 'q': case 'Q': case 27: // handle escape keys [q],[Q],[ESC] and exit
         {
             exit(0);
             break;
         }
-        case ' ': // toggle animation on/off
-        {
-            ANIMATION_RUNNING = !ANIMATION_RUNNING;
-            if (ANIMATION_RUNNING)
-            {
-                glutTimerFunc(SPEED, glutTimerCB, 0);
-            }
-            break;
-        }
-        case '1': // increase animation speed
-        {
-            SPEED -= 1;
-            if (SPEED < 2) SPEED = 1;
-            cout << "ANIMATION_SPEED: " << SPEED << endl;
-            break;
-        }
-        case '2': // decrease animation speed
-        {
-            SPEED += 1;
-            cout << "ANIMATION_SPEED: " << SPEED << endl;
-            break;
-        }
         case 'r': case 'R': default: // reset settings
         {
-            MOVE_X = 0.0f;
-            ANIMATION_RUNNING = false;
-            SPEED = 80;
             TrackBall::resetTransformation();
             break;
         }
@@ -184,10 +192,6 @@ void initMenu()
 {
     // register callback and create menu
     glutCreateMenu(glutMenuCB);
-    glutAddMenuEntry("Start Animation [SPACE]", ' ');
-    glutAddMenuEntry("Increase Speed [1]", '1');
-    glutAddMenuEntry("Decrease Speed [2]", '2');
-    glutAddMenuEntry("Reset Settings [R]", 'R');
     glutAddMenuEntry("Exit [Q] or [ESC]", 'Q');
 
     // attach menu to right mouse button
@@ -213,7 +217,7 @@ int main(int argc, char *argv[])
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | FL_OPENGL3);
     glutInitWindowPosition(100, 100);
     glutInitWindowSize(640, 640);
-    glutCreateWindow("Simple Animation");
+    glutCreateWindow("Gouraud Shader");
 
     // register extension wrapper library (GLEW)
     if (glewInit() != GLEW_OK)
@@ -248,6 +252,7 @@ int main(int argc, char *argv[])
     // register GLUT/FLTK callbacks
     glutDisplayFunc(glutDisplayCB);
     glutKeyboardFunc(glutKeyboardCB);
+    glutReshapeFunc(glutResizeCB);
 
     // register mouse handler callbacks
     glutMouseFunc(TrackBall::glutMouseButtonCB);
@@ -263,8 +268,9 @@ int main(int argc, char *argv[])
     {
         argc = 3;
         argv[0] = "";
-        argv[1] = "../../glsl/animation.vert";
-        argv[2] = "../../glsl/animation.frag";
+        argv[1] = "../../glsl/gouraud.vert";
+        argv[2] = "../../glsl/gouraud.frag";
+
         PROGRAM_ID = UtilGLSL::initShaderProgram(argc, argv);
     }
 

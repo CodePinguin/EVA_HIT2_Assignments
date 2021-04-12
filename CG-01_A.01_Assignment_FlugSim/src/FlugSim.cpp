@@ -39,6 +39,11 @@ bool USE_WIREFRAME = false;
 bool USE_DEPTH_TEST = false;
 bool USE_CULLING = false;
 
+float velocity = 0.0f;
+float PITCH = 0.0f;
+float ROLL = 0.0f;
+float YAW = 0.0f;
+
 int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
 string MENU_ENTRY_STR[4];
@@ -70,7 +75,12 @@ void glutDisplayCB(void)
     modelview = modelview * mouse;
 
     // set modelview transformation matrix in vertex shader
+    modelview = glm::rotate(modelview, glm::radians<float>(ROLL), glm::vec3(1.0f, 0.0f, 0.0f));
+    modelview = glm::rotate(modelview, glm::radians<float>(PITCH), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelview = glm::rotate(modelview, glm::radians<float>(YAW), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelview = glm::translate(modelview, glm::vec3(velocity, 0.0f, 0.0f));
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+
 
     // bind ground/shaft VAO to current drawing context
     glBindVertexArray(VAO);
@@ -111,13 +121,19 @@ void initModel(float width, float height)
     // definition of ground/shaft vertices (ground = width * 2)
     GLfloat ground_vertices[] =
     {
-        -width, -width, 0.0f, 1.0f,  // v0
-             0, -width, 0.0f, 1.0f,  // v1
-         width, -width, 0.0f, 1.0f,  // v2
-             0,  width, 0.0f, 1.0f,  // v3
+        //-width,  width, 0.0f, 1.0f,  // v0
+        //-width,   0.0f, 0.0f, 1.0f,  // v1
+        //-width, -width, 0.0f, 1.0f,  // v2
+        // width,   0.0f, 0.0f, 1.0f,  // v3
 
-        // TODO: add shaft verices
-             0, -width, -1.0f, 1.0f,  // v4
+        //// TODO: add shaft verices
+        //-width,   0.0f, -1.0f, 1.0f,  // v1
+
+        -width,  0.0f, -width, 1.0f,
+        -width,  0.0f,   0.0f, 1.0f,
+        -width,  0.0f,  width, 1.0f,
+         width,  0.0f,   0.0f, 1.0f,
+        -width, -1.5f,   0.0f, 1.0f
     };
 
     // definition of ground/shaft colors, each vertex has its own color definition (RGB)
@@ -244,63 +260,114 @@ void glutMenuCB(int key)
 {
     switch (key)
     {
+        case ' ':
+        {
+            velocity += 1.0f;
+            break;
+        }
+
+        // pitch around x-axis
+        case 'w': case 'W':
+        {
+            PITCH += 10.0f;
+            //initMenuChange(1, "Pitch + [P]", 'P');
+            break;
+        }
+
+        case 's': case 'S':
+        {
+            PITCH -= 10.0f;
+            //initMenuChange(2, "Pitch - [P]", 'P');
+            break;
+        }
+
+        // roll around y-axis
+        case 'a': case 'A':
+        {
+            ROLL += 10.0f;
+            //initMenuChange(3, "ROLL + [P]", 'P');
+            break;
+        }
+
+        case 'd': case 'D':
+        {
+            ROLL -= 10.0f;
+            //initMenuChange(4, "ROLL - [P]", 'P');
+            break;
+        }
+
+        // yaw around z-axis
+        case 'o': case 'O':
+        {
+            YAW += 10.0f;
+            //initMenuChange(5, "Yaw + [P]", 'P');
+            break;
+        }
+
+        case 'p': case 'P':
+        {
+            YAW -= 10.0f;
+            //initMenuChange(6, "Yaw - [P]", 'P');
+            break;
+        }
+
         case 'q': case 'Q': case 27: // handle escape keys [q],[Q],[ESC] and exit
         {
             exit(0);
             break;
         }
-        case 'c': case 'C': // toggle face culling
-        {
-            USE_CULLING = !USE_CULLING;
-            if (USE_CULLING)
-            {
-                glEnable(GL_CULL_FACE);
-                initMenuChange(1, "Disable Culling [C]", 'C');
-            }
-            else
-            {
-                glDisable(GL_CULL_FACE);
-                initMenuChange(1, "Enable Culling [C]", 'C');
-            }
-            break;
-        }
-        case 'd': case 'D': // toggle depth test
-        {
-            USE_DEPTH_TEST = !USE_DEPTH_TEST;
-            if (USE_DEPTH_TEST)
-            { 
-                glEnable(GL_DEPTH_TEST);
-                initMenuChange(2, "Disable Depth Buffer [D]", 'D');
-                glutSetWindowTitle("Basic Modeling (Depth Buffering Enabled)");
-            }
-            else
-            {
-                glDisable(GL_DEPTH_TEST);
-                initMenuChange(2, "Enable Depth Buffer [D]", 'D');
-                glutSetWindowTitle("Basic Modeling (Depth Buffering Disabled)");
-            }
-            break;
-        }
-        case 'w': case 'W': // toggle wireframe display
-        {
-            USE_WIREFRAME = !USE_WIREFRAME;
-            if (USE_WIREFRAME)
-            {
-                glPolygonMode(POLYGON_MODE, GL_LINE);
-                initMenuChange(3, "Disable Wireframe [W]", 'W');
-            }
-            else
-            {
-                glPolygonMode(POLYGON_MODE, GL_FILL);
-                initMenuChange(3, "Enable Wireframe [W]", 'W');
-            }
-            break;
-        }
+        //case 'c': case 'C': // toggle face culling
+        //{
+        //    USE_CULLING = !USE_CULLING;
+        //    if (USE_CULLING)
+        //    {
+        //        glEnable(GL_CULL_FACE);
+        //        initMenuChange(1, "Disable Culling [C]", 'C');
+        //    }
+        //    else
+        //    {
+        //        glDisable(GL_CULL_FACE);
+        //        initMenuChange(1, "Enable Culling [C]", 'C');
+        //    }
+        //    break;
+        //}
+        //case 'd': case 'D': // toggle depth test
+        //{
+        //    USE_DEPTH_TEST = !USE_DEPTH_TEST;
+        //    if (USE_DEPTH_TEST)
+        //    { 
+        //        glEnable(GL_DEPTH_TEST);
+        //        initMenuChange(2, "Disable Depth Buffer [D]", 'D');
+        //        glutSetWindowTitle("Basic Modeling (Depth Buffering Enabled)");
+        //    }
+        //    else
+        //    {
+        //        glDisable(GL_DEPTH_TEST);
+        //        initMenuChange(2, "Enable Depth Buffer [D]", 'D');
+        //        glutSetWindowTitle("Basic Modeling (Depth Buffering Disabled)");
+        //    }
+        //    break;
+        //}
+        //case 'w': case 'W': // toggle wireframe display
+        //{
+        //    USE_WIREFRAME = !USE_WIREFRAME;
+        //    if (USE_WIREFRAME)
+        //    {
+        //        glPolygonMode(POLYGON_MODE, GL_LINE);
+        //        initMenuChange(3, "Disable Wireframe [W]", 'W');
+        //    }
+        //    else
+        //    {
+        //        glPolygonMode(POLYGON_MODE, GL_FILL);
+        //        initMenuChange(3, "Enable Wireframe [W]", 'W');
+        //    }
+        //    break;
+        //}
         case 'r': case 'R': default: // reset settings
         {
             cout << "Reset Settings to Default..." << endl;
 
-            glDisable(GL_CULL_FACE);
+            /*glDisable(GL_CULL_FACE);
             USE_CULLING = false;
             initMenuChange(1, "Enable Culling [C]", 'C');
             glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);
@@ -315,7 +382,7 @@ void glutMenuCB(int key)
             glPolygonMode(POLYGON_MODE, GL_FILL);
             USE_WIREFRAME = false;
             initMenuChange(3, "Enable Wireframe [W]", 'W');
-            glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);
+            glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);*/
 
             TrackBall::resetTransformation();
             break;
@@ -327,42 +394,16 @@ void glutMenuCB(int key)
 
 
 
-void glutMenuCB2(int gl_enum)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-{
-    POLYGON_MODE = gl_enum;
-    GLint modes[2];
-    glGetIntegerv(GL_POLYGON_MODE, modes);
-    if (POLYGON_MODE == GL_FRONT)
-    {
-        glPolygonMode(GL_FRONT, modes[0]);
-    }
-    else
-    {
-        glPolygonMode(GL_BACK, modes[1]);
-    }
-    glutPostRedisplay();
-}
-
-
-
 void initMenu()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     int sub_menu;
-
-    // create sub-menu
-    sub_menu = glutCreateMenu(glutMenuCB2);
-    glutAddMenuEntry("Use GL_FRONT Faces", GL_FRONT);
-    glutAddMenuEntry("Use GL_BACK Faces", GL_BACK);
-    glutAddMenuEntry("Use GL_FRONT_AND_BACK Faces", GL_FRONT_AND_BACK);
 
     // register callback and create menu
     glutCreateMenu(glutMenuCB);
     glutAddMenuEntry("Enable Culling [C]", 'C');
     glutAddMenuEntry("Enable Depth Buffer [D]", 'D');
     glutAddMenuEntry("Enable Wireframe [W]", 'W');
-    glutAddSubMenu("Set Wireframe Mode", sub_menu);
     glutAddMenuEntry("Reset Settings [R]", 'R');
     glutAddMenuEntry("Exit [Q] or [ESC]", 'Q');
 

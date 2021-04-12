@@ -50,7 +50,7 @@ void glutTimerCB(int timer_id)
 {
     static float alpha = 0.0f;
     alpha += 0.2f;
-    //MOVE_X = 4 * sin(alpha);
+    MOVE_X = 4 * sin(alpha);
     //cout << "MOVE_X: " << MOVE_X << endl;
 
     // reset timer if the animation is running

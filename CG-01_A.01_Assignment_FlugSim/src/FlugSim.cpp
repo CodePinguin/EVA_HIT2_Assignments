@@ -260,7 +260,7 @@ void glutMenuCB(int key)
 {
     switch (key)
     {
-        case ' ':
+        case 32: //handles spacebar
         {
             velocity += 1.0f;
             break;
@@ -270,14 +270,12 @@ void glutMenuCB(int key)
         case 'w': case 'W':
         {
             PITCH += 10.0f;
-            //initMenuChange(1, "Pitch + [P]", 'P');
             break;
         }
 
         case 's': case 'S':
         {
             PITCH -= 10.0f;
-            //initMenuChange(2, "Pitch - [P]", 'P');
             break;
         }
 
@@ -285,14 +283,12 @@ void glutMenuCB(int key)
         case 'a': case 'A':
         {
             ROLL += 10.0f;
-            //initMenuChange(3, "ROLL + [P]", 'P');
             break;
         }
 
         case 'd': case 'D':
         {
             ROLL -= 10.0f;
-            //initMenuChange(4, "ROLL - [P]", 'P');
             break;
         }
 
@@ -300,14 +296,12 @@ void glutMenuCB(int key)
         case 'o': case 'O':
         {
             YAW += 10.0f;
-            //initMenuChange(5, "Yaw + [P]", 'P');
             break;
         }
 
         case 'p': case 'P':
         {
             YAW -= 10.0f;
-            //initMenuChange(6, "Yaw - [P]", 'P');
             break;
         }
 
@@ -316,73 +310,16 @@ void glutMenuCB(int key)
             exit(0);
             break;
         }
-        //case 'c': case 'C': // toggle face culling
-        //{
-        //    USE_CULLING = !USE_CULLING;
-        //    if (USE_CULLING)
-        //    {
-        //        glEnable(GL_CULL_FACE);
-        //        initMenuChange(1, "Disable Culling [C]", 'C');
-        //    }
-        //    else
-        //    {
-        //        glDisable(GL_CULL_FACE);
-        //        initMenuChange(1, "Enable Culling [C]", 'C');
-        //    }
-        //    break;
-        //}
-        //case 'd': case 'D': // toggle depth test
-        //{
-        //    USE_DEPTH_TEST = !USE_DEPTH_TEST;
-        //    if (USE_DEPTH_TEST)
-        //    { 
-        //        glEnable(GL_DEPTH_TEST);
-        //        initMenuChange(2, "Disable Depth Buffer [D]", 'D');
-        //        glutSetWindowTitle("Basic Modeling (Depth Buffering Enabled)");
-        //    }
-        //    else
-        //    {
-        //        glDisable(GL_DEPTH_TEST);
-        //        initMenuChange(2, "Enable Depth Buffer [D]", 'D');
-        //        glutSetWindowTitle("Basic Modeling (Depth Buffering Disabled)");
-        //    }
-        //    break;
-        //}
-        //case 'w': case 'W': // toggle wireframe display
-        //{
-        //    USE_WIREFRAME = !USE_WIREFRAME;
-        //    if (USE_WIREFRAME)
-        //    {
-        //        glPolygonMode(POLYGON_MODE, GL_LINE);
-        //        initMenuChange(3, "Disable Wireframe [W]", 'W');
-        //    }
-        //    else
-        //    {
-        //        glPolygonMode(POLYGON_MODE, GL_FILL);
-        //        initMenuChange(3, "Enable Wireframe [W]", 'W');
-        //    }
-        //    break;
-        //}
-        case 'r': case 'R': default: // reset settings
+        
+        // Reset Settings
+        case 'r': case 'R': default:
         {
             cout << "Reset Settings to Default..." << endl;
 
-            /*glDisable(GL_CULL_FACE);
-            USE_CULLING = false;
-            initMenuChange(1, "Enable Culling [C]", 'C');
-            glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);
-
-            glDisable(GL_DEPTH_TEST);
-            glutSetWindowTitle("Basic Modeling");
-            USE_DEPTH_TEST = false;
-            initMenuChange(2, "Enable Depth Buffer [D]", 'D');
-            glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);
-
-            POLYGON_MODE = GL_FRONT_AND_BACK;
-            glPolygonMode(POLYGON_MODE, GL_FILL);
-            USE_WIREFRAME = false;
-            initMenuChange(3, "Enable Wireframe [W]", 'W');
-            glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);*/
+            PITCH = 0.0f;
+            ROLL = 0.0f;
+            YAW = 0.0f;
+            velocity = 0.0f;
 
             TrackBall::resetTransformation();
             break;
@@ -401,9 +338,12 @@ void initMenu()
 
     // register callback and create menu
     glutCreateMenu(glutMenuCB);
-    glutAddMenuEntry("Enable Culling [C]", 'C');
-    glutAddMenuEntry("Enable Depth Buffer [D]", 'D');
-    glutAddMenuEntry("Enable Wireframe [W]", 'W');
+    glutAddMenuEntry("Pitch + [W]", 'W');
+    glutAddMenuEntry("Pitch - [S]", 'S');
+    glutAddMenuEntry("Roll + [A]", 'A');
+    glutAddMenuEntry("Roll - [D]", 'D');
+    glutAddMenuEntry("Yaw + [O]", 'O');
+    glutAddMenuEntry("Yaw - [P]", 'P');
     glutAddMenuEntry("Reset Settings [R]", 'R');
     glutAddMenuEntry("Exit [Q] or [ESC]", 'Q');
 

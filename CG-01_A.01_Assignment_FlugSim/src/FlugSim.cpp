@@ -25,7 +25,6 @@ using namespace std;
 #include "../../_COMMON/inc/UtilOpenGL.h"
 #include "../../_COMMON/inc/UtilGLSL.h"
 
-
 #include "../inc/Aircraft.h"
 
 // application global variables and constants /////////////////////////////////////////////////////
@@ -39,6 +38,7 @@ bool USE_WIREFRAME = false;
 bool USE_DEPTH_TEST = false;
 bool USE_CULLING = false;
 
+// import from Aircraft file later
 float velocity = 0.0f;
 float PITCH = 0.0f;
 float ROLL = 0.0f;
@@ -75,10 +75,10 @@ void glutDisplayCB(void)
     modelview = modelview * mouse;
 
     // set modelview transformation matrix in vertex shader
+    modelview = glm::translate(modelview, glm::vec3(velocity, 0.0f, 0.0f));
     modelview = glm::rotate(modelview, glm::radians<float>(ROLL), glm::vec3(1.0f, 0.0f, 0.0f));
     modelview = glm::rotate(modelview, glm::radians<float>(PITCH), glm::vec3(0.0f, 0.0f, 1.0f));
     modelview = glm::rotate(modelview, glm::radians<float>(YAW), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelview = glm::translate(modelview, glm::vec3(velocity, 0.0f, 0.0f));
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
 
 

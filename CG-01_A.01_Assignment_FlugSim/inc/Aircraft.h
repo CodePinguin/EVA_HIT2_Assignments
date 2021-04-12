@@ -2,10 +2,10 @@
 class Aircraft
 {
 public:
-	double pitch;
-	double roll;
-	double yaw;
-	double velocity;
+	float PITCH;
+	float ROLL;
+	float YAW;
+	float velocity;
 
 private:
 	double* Aircraft::getVertices();

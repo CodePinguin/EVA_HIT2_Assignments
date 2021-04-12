@@ -39,7 +39,6 @@ glm::vec4 Aircraft::GetPos() {
 }
 
 
-
 glm::mat4 Aircraft::GetR(int axes) {
 
 

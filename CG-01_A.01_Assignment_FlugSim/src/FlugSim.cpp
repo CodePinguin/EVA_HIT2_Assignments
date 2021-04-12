@@ -1,8 +1,6 @@
 ﻿///////////////////////////////////////////////////////////////////////////////////////////////////
-// Assignment: CG-03-A.01S_3DHouse Solution [Version 3.1 - FLTK-1.4.x / C++17 Update]            //
+// Assignment: Flight Simulator by Celina Vetter                                                 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 
 // OpenGL helper includes /////////////////////////////////////////////////////////////////////////
@@ -72,17 +70,6 @@ void initModel(float width)
     };
 
 
-    glm::mat4 currentRot = aircraft.GetRot();
-    glm::vec4 currentPos = aircraft.GetPos();
-    for(int i = 0; i < 5; i++){
-        glm::vec4 point(ground_vertices[i*4], ground_vertices[i*4 + 1], ground_vertices[i*4 + 2], ground_vertices[i*4 + 3]);
-        glm::vec4 transformed = currentRot * point;
-        ground_vertices[i * 4] = transformed.x + currentPos.x;
-        ground_vertices[i * 4 + 1] = transformed.y + currentPos.y;
-        ground_vertices[i * 4 + 2] = transformed.z + currentPos.z;
-        ground_vertices[i * 4 + 3] = transformed.w;
-    }
-
     // definition of ground/shaft colors, each vertex has its own color definition (RGB)
     GLfloat ground_colors[] =
     {
@@ -109,16 +96,13 @@ void initModel(float width)
     };
     SHAFT_INDICES_COUNT = sizeof(shaft_indices) / sizeof(shaft_indices[0]);
 
-
-
-    // TODO: create two global VAOs for seperate ground/shaft and house/roof drawing //////////////
     glGenVertexArrays(1, &VAO);
 
-    // TODO: create two local VBOs for seperate ground/shaft and house/roof setup
+    // create local VBOs
     GLuint vbo;
     glGenBuffers(1, &vbo);
 
-    // TODO: create two local EBOs for seperate ground/shaft and house/roof setup
+    // create local EBOs
     GLuint ebo;
     glGenBuffers(1, &ebo);
 
@@ -155,8 +139,6 @@ void glutDisplayCB(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
 
-    initModel(WIDTH);
-
     // clear window background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -171,7 +153,17 @@ void glutDisplayCB(void)
 
     //glm::mat4 modelview = aircraft.GetModelView();
     //modelview = modelview * mouse;
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
+
+    glm::mat4 plainTransform = aircraft.GetRot();
+    glm::vec4 currentPos = aircraft.GetPos();
+    plainTransform[3][0] = currentPos.x;
+    plainTransform[3][1] = currentPos.y;
+    plainTransform[3][2] = currentPos.z;
+
+    //plainTransform = plainTransform * mouse;
+
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(plainTransform));
+
 
     glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
     glDrawElements(GL_TRIANGLE_STRIP, SHAFT_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(SHAFT_DRAW_OFFSET));
@@ -182,8 +174,6 @@ void glutDisplayCB(void)
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();
 }
-
-
 
 
 
@@ -249,6 +239,7 @@ void glutMenuCB(int key)
         }
 
         case 'm':
+        case 'M':
             aircraft.increaseVel(-delta);
             break;
 

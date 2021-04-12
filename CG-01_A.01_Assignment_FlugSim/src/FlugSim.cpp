@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/euler_angles.hpp>
 
 
 // system includes ////////////////////////////////////////////////////////////////////////////////
@@ -38,110 +39,59 @@ bool USE_WIREFRAME = false;
 bool USE_DEPTH_TEST = false;
 bool USE_CULLING = false;
 
-// import from Aircraft file later
-float velocity = 0.0f;
-float PITCH = 0.0f;
-float ROLL = 0.0f;
-float YAW = 0.0f;
-
 int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
 string MENU_ENTRY_STR[4];
 
-const float WIDTH = 5.0f;  // width of house (ground = width * 2)
-const float HEIGHT = 3.0f; // height of roof
+const float WIDTH = 2.0f;
 
-// TODO: declare two VAOs for seperate ground/shaft and house/roof drawing
-GLuint VAO;
+// VAO
+GLuint VAO[2];
 
-// TODO: add additional globals for shaft, house and roof indices count
+// TODO: add additional globals for shaft indices count
 GLuint GROUND_INDICES_COUNT = 0;
 GLuint SHAFT_INDICES_COUNT = 0;
 GLuint64 SHAFT_DRAW_OFFSET = 0;
 
+GLuint HOUSE_INDICES_COUNT = 0;
+GLuint ROOF_INDICES_COUNT = 0;
+GLuint64 ROOF_DRAW_OFFSET = 0;
 
-
-void glutDisplayCB(void)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-{
-    // clear window background
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // setup modelview matrix
-    glm::mat4 modelview(1.0f);
-
-    // apply trackball transformation to modelview matrix
-    glm::mat4 mouse = TrackBall::getTransformation();
-    modelview = modelview * mouse;
-
-    // set modelview transformation matrix in vertex shader
-    modelview = glm::translate(modelview, glm::vec3(velocity, 0.0f, 0.0f));
-    modelview = glm::rotate(modelview, glm::radians<float>(ROLL), glm::vec3(1.0f, 0.0f, 0.0f));
-    modelview = glm::rotate(modelview, glm::radians<float>(PITCH), glm::vec3(0.0f, 0.0f, 1.0f));
-    modelview = glm::rotate(modelview, glm::radians<float>(YAW), glm::vec3(0.0f, 1.0f, 0.0f));
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-
-
-    // bind ground/shaft VAO to current drawing context
-    glBindVertexArray(VAO);
-
-    // indexed drawing of ground
-    //glEnable(GL_POLYGON_OFFSET_FILL);
-    //glPolygonOffset(-0.01f, 1.0f);
-    glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
-    //glDisable(GL_POLYGON_OFFSET_FILL);
-
-    // TODO: add indexed drawing of shaft
-    bool reenable = false;  // local variable to re-enable culling 
-
-    if (glIsEnabled(GL_CULL_FACE)) // shaft must not be culled
-    {
-        glDisable(GL_CULL_FACE);
-        reenable = true;
-    }
-
-    // indexed drawing of shaft
-    glDrawElements(GL_TRIANGLE_STRIP, SHAFT_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(SHAFT_DRAW_OFFSET));
-
-    if (reenable) // re-enable culling for rest of model
-    {
-        glEnable(GL_CULL_FACE);
-        reenable = false;
-    }
-
-    glutSwapBuffers();
-    UtilOpenGL::checkOpenGLErrorCode();
-}
+Aircraft aircraft;
 
 
 
-void initModel(float width, float height)
+void initModel(float width)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     // definition of ground/shaft vertices (ground = width * 2)
     GLfloat ground_vertices[] =
     {
-        //-width,  width, 0.0f, 1.0f,  // v0
-        //-width,   0.0f, 0.0f, 1.0f,  // v1
-        //-width, -width, 0.0f, 1.0f,  // v2
-        // width,   0.0f, 0.0f, 1.0f,  // v3
-
-        //// TODO: add shaft verices
-        //-width,   0.0f, -1.0f, 1.0f,  // v1
-
         -width,  0.0f, -width, 1.0f,
         -width,  0.0f,   0.0f, 1.0f,
         -width,  0.0f,  width, 1.0f,
          width,  0.0f,   0.0f, 1.0f,
-        -width, -1.5f,   0.0f, 1.0f
+        -width, -width / 2,   0.0f, 1.0f
     };
+
+
+    glm::mat4 currentRot = aircraft.GetRot();
+    glm::vec4 currentPos = aircraft.GetPos();
+    for(int i = 0; i < 5; i++){
+        glm::vec4 point(ground_vertices[i*4], ground_vertices[i*4 + 1], ground_vertices[i*4 + 2], ground_vertices[i*4 + 3]);
+        glm::vec4 transformed = currentRot * point;
+        ground_vertices[i * 4] = transformed.x + currentPos.x;
+        ground_vertices[i * 4 + 1] = transformed.y + currentPos.y;
+        ground_vertices[i * 4 + 2] = transformed.z + currentPos.z;
+        ground_vertices[i * 4 + 3] = transformed.w;
+    }
 
     // definition of ground/shaft colors, each vertex has its own color definition (RGB)
     GLfloat ground_colors[] =
     {
+        1.0f, 0.0f, 1.0f,
         1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 0.0f,
         1.0f, 1.0f, 1.0f,
         0.9f, 0.9f, 0.9f
     };
@@ -162,17 +112,63 @@ void initModel(float width, float height)
     };
     SHAFT_INDICES_COUNT = sizeof(shaft_indices) / sizeof(shaft_indices[0]);
 
+    float test1 = 5;
+    float test2 = 4;
+    GLfloat house_vertices[] =
+    {
+        -test1, -test1, test1, 1.0f, //v0
+        -test2, -test1, test1, 1.0f, //v1
+        -test2, -test1, test2, 1.0f, //v2
+        -test1, -test1, test2, 1.0f, //v3
+
+        -test1, -test2, test1, 1.0f, //v4
+        -test2, -test2, test1, 1.0f, //v5
+        -test2, -test2, test2, 1.0f, //v6
+        -test1, -test2, test2, 1.0f, //v7
+    };
+
+    GLfloat house_colors[] =
+    {
+        1.0f, 1.0f, 1.0f, //v0 
+        1.0f, 0.0f, 1.0f, //v1
+        0.0f, 1.0f, 0.0f, //v2
+        0.0f, 0.0f, 1.0f, //v3
+         
+        1.0f, 1.0f, 1.0f, //v4
+        1.0f, 0.0f, 1.0f, //v5
+        0.0f, 1.0f, 0.0f, //v6
+        0.0f, 0.0f, 1.0f, //v7
+    };
+
+    GLushort house_indices[] =
+    {
+        0, 3, 2,
+        1, 0, 2,
+        0, 4, 5,
+        1, 0, 5,
+        1, 5, 6,
+        2, 1, 6,
+        2, 6, 7,
+        3, 2, 7,
+        3, 7, 4,
+        0, 3, 4,
+        4, 7, 6,
+        5, 4, 6
+    };
+    HOUSE_INDICES_COUNT = sizeof(house_indices) / sizeof(house_indices[0]);
+    ROOF_DRAW_OFFSET = sizeof(house_indices);
+
 
     // TODO: create two global VAOs for seperate ground/shaft and house/roof drawing //////////////
-    glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(2, &VAO[0]);
 
     // TODO: create two local VBOs for seperate ground/shaft and house/roof setup
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
+    GLuint vbo[2];
+    glGenBuffers(2, &vbo[0]);
 
     // TODO: create two local EBOs for seperate ground/shaft and house/roof setup
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
+    GLuint ebo[2];
+    glGenBuffers(2, &ebo[0]);
 
     // get position and color vertex attribute locations (requires compiled shader program!)
     GLuint vecPosition = glGetAttribLocation(PROGRAM_ID, "vecPosition");
@@ -180,10 +176,10 @@ void initModel(float width, float height)
 
 
     // bind VAO for ground/shaft setup ////////////////////////////////////////////////////////////
-    glBindVertexArray(VAO);
+    glBindVertexArray(VAO[0]);
 
     // setup VBO for ground/shaft position and color vertex attributes
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(ground_vertices) + sizeof(ground_colors), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ground_vertices), ground_vertices);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(ground_vertices), sizeof(ground_colors), ground_colors);
@@ -195,14 +191,89 @@ void initModel(float width, float height)
     glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
 
     // setup EBO for ground/shaft face indices
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[0]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ground_indices) + sizeof(shaft_indices), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(ground_indices), ground_indices);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, SHAFT_DRAW_OFFSET, sizeof(shaft_indices), shaft_indices);
 
 
-   
+
+
+    glBindVertexArray(VAO[1]);
+
+    // TODO: setup VBO for house/roof position and color vertex attributes
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(house_vertices) + sizeof(house_colors), nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(house_vertices), house_vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(house_vertices), sizeof(house_colors), house_colors);
+
+    // define color vertex attribute default draw color if array is disabled
+    //glVertexAttrib3f(COLOR_VEC3_LOCATION, 1.0f, 1.0f, 0.0f);
+
+    // TODO: define house/roof vertex attributes data format and enable them
+    glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));
+    glEnableVertexAttribArray(vecPosition);
+    glVertexAttribPointer(COLOR_VEC3_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(house_vertices)));
+    glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
+
+    // TODO: setup EBO for house/roof face indices
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(house_indices), nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(house_indices), house_indices);
+
 }
+
+
+void glutDisplayCB(void)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+{
+
+    initModel(WIDTH);
+
+    // clear window background
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+    // apply trackball transformation to modelview matrix
+    glm::mat4 mouse = TrackBall::getTransformation();
+
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
+
+    // bind VAO to current drawing context
+    glBindVertexArray(VAO[0]);
+
+    //glm::mat4 modelview = aircraft.GetModelView();
+    //modelview = modelview * mouse;
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
+
+    glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+    glDrawElements(GL_TRIANGLE_STRIP, SHAFT_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(SHAFT_DRAW_OFFSET));
+
+
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
+
+    // TODO: add indexed drawing of house/roof
+    // bind house/roof VAO to current drawing context
+    glBindVertexArray(VAO[1]);
+
+    // disable color vertex attribute to set default color for house drawing
+    //glDisableVertexAttribArray(COLOR_VEC3_LOCATION);
+
+    // indexed drawing of house
+    glDrawElements(GL_TRIANGLE_STRIP, HOUSE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+
+    // re-enable color vertex attribute to use color array for roof drawing
+    //glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
+
+    // indexed drawing of roof
+    glDrawElements(GL_TRIANGLE_FAN, ROOF_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(ROOF_DRAW_OFFSET));
+
+
+    glutSwapBuffers();
+    UtilOpenGL::checkOpenGLErrorCode();
+}
+
+
 
 
 
@@ -258,50 +329,56 @@ void glutUpdateMenuCB(int status, int x, int y)
 void glutMenuCB(int key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
+    double delta = .1;
     switch (key)
     {
         case 32: //handles spacebar
         {
-            velocity += 1.0f;
+            aircraft.increaseVel(delta);
             break;
         }
+
+        case 'm':
+            aircraft.increaseVel(-delta);
+            break;
 
         // pitch around x-axis
         case 'w': case 'W':
         {
-            PITCH += 10.0f;
+            aircraft.IncreaseAngle(2, delta);
             break;
         }
 
         case 's': case 'S':
         {
-            PITCH -= 10.0f;
+            aircraft.IncreaseAngle(2, -delta);
             break;
         }
 
         // roll around y-axis
         case 'a': case 'A':
         {
-            ROLL += 10.0f;
+            aircraft.IncreaseAngle(0, delta);
             break;
         }
 
         case 'd': case 'D':
         {
-            ROLL -= 10.0f;
+            aircraft.IncreaseAngle(0, -delta);
             break;
         }
 
         // yaw around z-axis
         case 'o': case 'O':
-        {
-            YAW += 10.0f;
+        {            
+            aircraft.IncreaseAngle(1, delta);
+
             break;
         }
 
         case 'p': case 'P':
         {
-            YAW -= 10.0f;
+            aircraft.IncreaseAngle(1, -delta);
             break;
         }
 
@@ -316,11 +393,7 @@ void glutMenuCB(int key)
         {
             cout << "Reset Settings to Default..." << endl;
 
-            PITCH = 0.0f;
-            ROLL = 0.0f;
-            YAW = 0.0f;
-            velocity = 0.0f;
-
+            aircraft.Reset();
             TrackBall::resetTransformation();
             break;
         }
@@ -365,11 +438,7 @@ void glutKeyboardCB(unsigned char key, int x, int y)
 int main(int argc, char *argv[])
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    /* Airplaneairplane = Airplane();
-
-    if (keypressed W) {
-        airplane.IncreaseVelo();
-    }*/
+    aircraft = Aircraft();
 
 
     // init GLUT/FLTK settings
@@ -435,7 +504,7 @@ int main(int argc, char *argv[])
 
     // init application
     initRendering();
-    initModel(WIDTH, HEIGHT);
+    initModel(WIDTH);
     initMenu();
 
     // entering GLUT/FLTK main event loop until user exits

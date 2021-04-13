@@ -9,15 +9,17 @@ class Aircraft
 {
 
 private:
-	float delta;
 	glm::mat4 currentTransform;
 	glm::vec4 currentPos;
+	glm::mat4 GetR(int axes);
+	float delta;
 	float velocity;
 	int changedAxis = -1;
-	glm::mat4 GetR(int axes);
+	
+
 public:
-	void IncreaseAngle(int axes, double value);
 	Aircraft();
+	void IncreaseAngle(int axes, double value);
 	void increaseVel(double value);
 	void Reset();
 	glm::mat4 GetRot();

@@ -32,9 +32,6 @@ glm::mat4 Aircraft::GetRot() {
 }
 
 glm::vec4 Aircraft::GetPos() {
-	glm::vec4 translate(velocity, 0, 0, 1);
-	translate = currentTransform * translate;
-	currentPos += translate;
 	return currentPos;
 }
 
@@ -75,4 +72,16 @@ glm::mat4 Aircraft::GetR(int axes) {
 void Aircraft::IncreaseAngle(int axes, double value) {
 	changedAxis = axes;
 	delta = value;
+}
+
+void Aircraft::UpdatePhysics(unsigned int sim_time) {
+	unsigned int delta_t = sim_time - last_time;
+	float delta_t_sec = delta_t / 1000.0;
+
+	//Update position
+	glm::vec4 translate(velocity * delta_t_sec, 0, 0, 1);
+	translate = currentTransform * translate;
+	currentPos += translate;
+
+	last_time = sim_time;
 }

@@ -15,6 +15,7 @@ private:
 	float delta;
 	float velocity;
 	int changedAxis = -1;
+	unsigned int last_time = 0;
 	
 
 public:
@@ -24,5 +25,6 @@ public:
 	void Reset();
 	glm::mat4 GetRot();
 	glm::vec4 GetPos();
+	void UpdatePhysics(unsigned int sim_time);
 };
 

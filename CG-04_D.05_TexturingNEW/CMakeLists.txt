@@ -137,12 +137,6 @@ file(GLOB GLSL
 )
 source_group("glsl" FILES ${GLSL})
 
-# find PNG files (and let them show up in the IDEs)
-file(GLOB PNG
-    png/*.png
-)
-source_group("png" FILES ${PNG})
-
 
 # find packages and libs
 find_package(OpenGL REQUIRED)

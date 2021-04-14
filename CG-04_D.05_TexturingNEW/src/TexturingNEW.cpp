@@ -1,6 +1,8 @@
 ﻿///////////////////////////////////////////////////////////////////////////////////////////////////
-// Assignment: Flight Simulator by Celina Vetter                                                 //
+// Demo: CG-04_D.05_Texturing [Version 3.1 - FLTK-1.4.x / C++17 Update]                          //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 // OpenGL helper includes /////////////////////////////////////////////////////////////////////////
@@ -23,8 +25,8 @@ using namespace std;
 #include "../../_COMMON/inc/UtilOpenGL.h"
 #include "../../_COMMON/inc/UtilGLSL.h"
 #include "../../_COMMON/inc/UtilImage.h"
+#include "../../_COMMON/inc/vbocube.h"
 
-#include "../inc/Aircraft.h"
 
 // application global variables and constants /////////////////////////////////////////////////////
 GLint PROGRAM_ID = 0;
@@ -33,96 +35,90 @@ GLint PROJECTION_MAT4_LOCATION = 0;
 GLint TEXTURE_MAT4_LOCATION = 0;
 GLint COLOR_VEC3_LOCATION = 0;
 
-GLenum POLYGON_MODE = GL_FRONT_AND_BACK;
-bool USE_WIREFRAME = false;
-bool USE_DEPTH_TEST = false;
-bool USE_CULLING = false;
-
 glm::mat4 TheCameraView(1.0f);
+VBOCube* TheCube = nullptr;
 
 GLuint TEX_NAME;
 
 int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
-string MENU_ENTRY_STR[4];
+string MENU_ENTRY_STR[3];
 
-const float LENGTH = 800.0f;
+enum DRAW_TYPE {DRAW_CUBE};
 
-// VAO
-GLuint VAO[2];
-
-// additional globals for shaft indices count
-GLuint PLANE_INDICES_COUNT = 0;
-GLuint SHAFT_INDICES_COUNT = 0;
-GLuint64 SHAFT_DRAW_OFFSET = 0;
-
+GLuint VAO;
 GLuint GROUND_INDICES_COUNT = 0;
+GLuint64 FENCE_DRAW_OFFSET = 0;
 
 
-Aircraft aircraft;
-
-
-void initModel()
+void glutDisplayCB(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    // definition of plane/shaft vertices
-    float width = 1.0f;
-    GLfloat plane_vertices[] =
-    {
-        -width,  0.0f,  -width, 1.0f,
-        -width,  0.0f,    0.0f, 1.0f,
-        -width,  0.0f,   width, 1.0f,
-         width,  0.0f,    0.0f, 1.0f,
-        -width, -width/2, 0.0f, 1.0f
-    };
+    // clear window background
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // setup modelview matrix, init with camera view
+    glm::mat4 modelview = TheCameraView;
+
+    // apply trackball transformation to modelview matrix
+    glm::mat4 mouse = TrackBall::getTransformation();
+    modelview = modelview * mouse;
+
+    // setup texture matrix
+    glm::mat4 texture_matrix(1.0f);
+
+    // bind currently selected texture
+    glBindTexture(GL_TEXTURE_2D, TEX_NAME);
+    
+
+    // setup texture matrix
+    texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
+    glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+    
+    // scale cube
+    modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
+    
+    // draw cube
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+    TheCube->draw();
+
+    // Celina's smaller cube
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+    
+    glutSwapBuffers();
+    UtilOpenGL::checkOpenGLErrorCode();
+}
 
 
-    // definition of ground/shaft colors, each vertex has its own color definition (RGB)
-    GLfloat plane_colors[] =
-    {
-        1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 1.0f,
-        0.9f, 0.9f, 0.9f
-    };
 
-    // definition of ground face indices (using GL_TRIANGLES --> 6)
-    GLushort plane_indices[] =
-    {
-        0, 1, 3,
-        2, 1, 3
-    };
-    PLANE_INDICES_COUNT = sizeof(plane_indices) / sizeof(plane_indices[0]);
-    SHAFT_DRAW_OFFSET = sizeof(plane_indices);
+void initModels(void)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+{
+    TheCube = new VBOCube;
 
-    // definition of shaft face indices (using GL_TRIANGLE_STRIP --> 10)
-    GLushort shaft_indices[] =
-    {
-        4, 1, 3
-    };
-    SHAFT_INDICES_COUNT = sizeof(shaft_indices) / sizeof(shaft_indices[0]);
-
-    /////////////////////////////////////////////////////////////////////////////////////////
-    // define ground vertices
-    float length = 12.0f;
+    float width = 0.3f;
     GLfloat ground_vertices[] =
     {
-        -length/2,  -length/2,   length/2, 1.0f, //v0
-         length/2,  -length/2,   length/2, 1.0f, //v1
-         length/2,  -length/2,  -length/2, 1.0f, //v2
-        -length/2,  -length/2,  -length/2, 1.0f  //v3          
+        -width, -width-1,  width, 1.0f,  // v0
+         width, -width-1,  width, 1.0f,  // v1
+         width, -width-1, -width, 1.0f,  // v2
+        -width, -width-1, -width, 1.0f,  // v3
     };
 
     GLfloat ground_colors[] =
     {
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f
+        0.0f, 0.4f, 0.0f,
+        0.0f, 0.4f, 0.0f,
+        0.0f, 0.4f, 0.0f,
+        0.0f, 0.4f, 0.0f,
+        0.0f, 0.4f, 0.0f,
+        0.0f, 0.4f, 0.0f,
+        0.0f, 0.4f, 0.0f,
+        0.0f, 0.4f, 0.0f
     };
 
-    float ground_tex[] =
+    float tex[] =
     {
         0.0f, 0.0f,
         1.0f, 0.0f,
@@ -132,49 +128,27 @@ void initModel()
 
     GLushort ground_indices[] =
     {
-        0, 2, 3,
-        1, 0, 2
+        0, 3, 2, 1, 0, 2,
     };
+
     GROUND_INDICES_COUNT = sizeof(ground_indices) / sizeof(ground_indices[0]);
+    FENCE_DRAW_OFFSET = sizeof(ground_indices);
 
-    glGenVertexArrays(2, &VAO[0]);
+    glGenVertexArrays(1, &VAO);
 
-    // create local VBOs
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
+    // TODO: create two local VBOs for seperate ground/fence and house/roof setup
+    /*GLuint vbo;
+    glGenBuffers(1, &vbo);*/
 
-    // create local EBOs
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
+    // TODO: create two local EBOs for seperate ground/fence and house/roof setup
+    /*GLuint ebo;
+    glGenBuffers(1, &ebo);*/
 
     // get position and color vertex attribute locations (requires compiled shader program!)
-    GLuint vecPosition = glGetAttribLocation(PROGRAM_ID, "vecPosition");
-    COLOR_VEC3_LOCATION = glGetAttribLocation(PROGRAM_ID, "vecColor");
+    //GLuint vecPosition = glGetAttribLocation(PROGRAM_ID, "vecPosition");
+    //COLOR_VEC3_LOCATION = glGetAttribLocation(PROGRAM_ID, "vecColor");
 
-
-    // bind VAO for ground/shaft setup ////////////////////////////////////////////////////////////
-    glBindVertexArray(VAO[0]);
-
-    // setup VBO for ground/shaft position and color vertex attributes
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices) + sizeof(plane_colors), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(plane_vertices), plane_vertices);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(plane_vertices), sizeof(plane_colors), plane_colors);
-
-    // define ground/shaft position and color vertex attributes data format and enable them
-    glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));
-    glEnableVertexAttribArray(vecPosition);
-    glVertexAttribPointer(COLOR_VEC3_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(plane_vertices)));
-    glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
-
-    // setup EBO for ground/shaft face indices
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_indices) + sizeof(shaft_indices), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(plane_indices), plane_indices);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, SHAFT_DRAW_OFFSET, sizeof(shaft_indices), shaft_indices);
-
-
-    glBindVertexArray(VAO[1]);
+    glBindVertexArray(VAO);
 
     unsigned int handle[4];
     glGenBuffers(4, handle);
@@ -190,7 +164,7 @@ void initModel()
     glEnableVertexAttribArray(1);  // Vertex normal
 
     glBindBuffer(GL_ARRAY_BUFFER, handle[2]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), ground_tex, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), tex, GL_STATIC_DRAW);
     glVertexAttribPointer((GLuint)2, 2, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
     glEnableVertexAttribArray(2);  // texture coords
 
@@ -199,74 +173,10 @@ void initModel()
 
     glBindVertexArray(0);
 
-    }
-
-
-void glutDisplayCB(void)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-{
-    // clear window background
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-    // apply trackball transformation to modelview matrix
-    glm::mat4 mouse = TrackBall::getTransformation();
-
-   /* glm::mat4 camRot = aircraft.GetRot();
-    glm::vec4 camPos = aircraft.GetPos();
-    camRot[3][0] = camPos.x;
-    camRot[3][1] = camPos.y;
-    camRot[3][2] = camPos.z;
-    camRot[3][3] = 1;
-    mouse = TheCameraView * inverse(camRot);
-    std::cout << mouse[3][3] << std::endl;*/
-
-
-    //////////////
-    //  Ground  //
-    //////////////
-    // setup texture matrix
-    glm::mat4 texture_matrix(1.0f);
-
-    // bind currently selected texture
-    glBindTexture(GL_TEXTURE_2D, TEX_NAME);
-
-
-    //////////////
-    // Airplane //
-    //////////////
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
-
-    // bind VAO to current drawing context
-    glBindVertexArray(VAO[0]);
-
-    glm::mat4 plainTransform = aircraft.GetRot();
-    glm::vec4 currentPos = aircraft.GetPos();
-    plainTransform[3][0] = currentPos.x;
-    plainTransform[3][1] = currentPos.y;
-    plainTransform[3][2] = currentPos.z;
-
-    plainTransform = mouse * plainTransform;
-
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(plainTransform));
-
-    glDrawElements(GL_TRIANGLES, PLANE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
-    glDrawElements(GL_TRIANGLES, SHAFT_INDICES_COUNT, GL_UNSIGNED_SHORT, GL_BUFFER_OFFSET(SHAFT_DRAW_OFFSET));
-
-
-
-
-    // setup texture matrix
-    texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
-    glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
-
-    glBindVertexArray(VAO[1]);
-    glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
-
-    glutSwapBuffers();
-    UtilOpenGL::checkOpenGLErrorCode();
+    
 }
+
+
 
 
 
@@ -274,7 +184,7 @@ void initRendering()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     // set background color
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     // clear window background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -282,13 +192,13 @@ void initRendering()
     // set rendering mode
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 
     // define fixed light source position and properties (in eye space coordinates)
     glm::vec4 position(0.0f, 0.0f, 20.0f, 1.0f);
-    glm::vec4  ambient(0.8f, 0.8f, 0.8f, 1.0f);
-    glm::vec4  diffuse(0.8f, 0.8f, 0.8f, 1.0f);
-    glm::vec4 specular(1.0f, 1.0f, 1.0f, 1.0f);
+    glm::vec4  ambient(0.8f, 0.8f,  0.8f, 1.0f);
+    glm::vec4  diffuse(0.8f, 0.8f,  0.8f, 1.0f);
+    glm::vec4 specular(1.0f, 1.0f,  1.0f, 1.0f);
 
     // define material properties
     glm::vec4  mat_ambient(0.1f, 0.1f, 0.1f, 1.0f);
@@ -330,12 +240,10 @@ void initRendering()
     GLint location = glGetUniformLocation(PROGRAM_ID, "ReplaceColor");
     glUniform1i(location, true);
 
+    // load textures from files
     glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
-    UtilImage::loadPNGTexture("../../png/map.png", &TEX_NAME); // Pointer to image data
-    /*glBindTexture(GL_TEXTURE_2D, TEX_NAME);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+    UtilImage::loadPNGTexture("../../res/yoda_256.png", &TEX_NAME); // Pointer to image data
+    //UtilImage::loadPNGTexture("../../res/metal_256.png", &TEX_NAME);
 
     // setup the camera view matrix
     TheCameraView = glm::lookAt(glm::vec3(0.0f, 0.0f, 8.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -348,10 +256,25 @@ void initRendering()
 
     // get texture matrix uniform location
     TEXTURE_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matTexture");
+}
 
-    // setup orthographic projection matrix
-    glm::mat4 projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, -10.0f, 10.0f);
+
+
+void glutResizeCB(int width, int height)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+{
+    // this function is called before the window's first display
+
+    glViewport(0, 0, (GLsizei)width, (GLsizei)height);
+
+    // adjust aspect value for new viewport size
+    GLfloat aspect = (GLfloat)width / (GLfloat)height;
+
+    // setup perspective projection matrix for new viewport size
+    glm::mat4 projection = glm::perspective(glm::radians<float>(60.0f), aspect, 1.0f, 20.0f);
     glUniformMatrix4fv(PROJECTION_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glutPostRedisplay();
 }
 
 
@@ -381,72 +304,23 @@ void glutUpdateMenuCB(int status, int x, int y)
 void glutMenuCB(int key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    double delta = .1;
     switch (key)
     {
-        case 32: //handles spacebar
-        {
-            aircraft.increaseVel(delta);
-            break;
-        }
-
-        case 'm':
-        case 'M':
-            aircraft.increaseVel(-delta);
-            break;
-
-        // pitch around x-axis
-        case 'w': case 'W':
-        {
-            aircraft.IncreaseAngle(2, delta);
-            break;
-        }
-
-        case 's': case 'S':
-        {
-            aircraft.IncreaseAngle(2, -delta);
-            break;
-        }
-
-        // roll around y-axis
-        case 'a': case 'A':
-        {
-            aircraft.IncreaseAngle(0, delta);
-            break;
-        }
-
-        case 'd': case 'D':
-        {
-            aircraft.IncreaseAngle(0, -delta);
-            break;
-        }
-
-        // yaw around z-axis
-        case 'o': case 'O':
-        {            
-            aircraft.IncreaseAngle(1, delta);
-
-            break;
-        }
-
-        case 'p': case 'P':
-        {
-            aircraft.IncreaseAngle(1, -delta);
-            break;
-        }
-
         case 'q': case 'Q': case 27: // handle escape keys [q],[Q],[ESC] and exit
         {
             exit(0);
             break;
         }
-        
-        // Reset Settings
-        case 'r': case 'R': default:
+        case 'm': case 'M': // toggle modulation/replacement of material color
         {
-            cout << "Reset Settings to Default..." << endl;
-
-            aircraft.Reset();
+            GLint location = glGetUniformLocation(PROGRAM_ID, "ReplaceColor");
+            GLint replace_color; // there is no glGetUniform for boolean types (use int)
+            glGetUniformiv(PROGRAM_ID, location, &replace_color);
+            glUniform1i(location, !replace_color);
+            break;
+        }
+        case 'r': case 'R': default: // reset settings
+        {
             TrackBall::resetTransformation();
             break;
         }
@@ -460,17 +334,9 @@ void glutMenuCB(int key)
 void initMenu()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    int sub_menu;
-
     // register callback and create menu
     glutCreateMenu(glutMenuCB);
-    glutAddMenuEntry("Pitch + [W]", 'W');
-    glutAddMenuEntry("Pitch - [S]", 'S');
-    glutAddMenuEntry("Roll + [A]", 'A');
-    glutAddMenuEntry("Roll - [D]", 'D');
-    glutAddMenuEntry("Yaw + [O]", 'O');
-    glutAddMenuEntry("Yaw - [P]", 'P');
-    glutAddMenuEntry("Reset Settings [R]", 'R');
+    glutAddMenuEntry("Toggle Color Modulation [M]", 'M');
     glutAddMenuEntry("Exit [Q] or [ESC]", 'Q');
 
     // attach menu to right mouse button
@@ -491,15 +357,12 @@ void glutKeyboardCB(unsigned char key, int x, int y)
 int main(int argc, char *argv[])
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    aircraft = Aircraft();
-
-
     // init GLUT/FLTK settings
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | FL_OPENGL3);
     glutInitWindowPosition(100, 100);
-    glutInitWindowSize(LENGTH, LENGTH);
-    glutCreateWindow("Flight Simulator");
+    glutInitWindowSize(640, 640);
+    glutCreateWindow("Texturing");
 
     // register extension wrapper library (GLEW)
     if (glewInit() != GLEW_OK)
@@ -534,6 +397,7 @@ int main(int argc, char *argv[])
     // register GLUT/FLTK callbacks
     glutDisplayFunc(glutDisplayCB);
     glutKeyboardFunc(glutKeyboardCB);
+    glutReshapeFunc(glutResizeCB);
     glutMenuStatusFunc(glutUpdateMenuCB);
 
     // register mouse handler callbacks
@@ -550,14 +414,14 @@ int main(int argc, char *argv[])
     {
         argc = 3;
         argv[0] = "";
-        argv[1] = "../../glsl/FlugSim.vert";
-        argv[2] = "../../glsl/FlugSim.frag";
+        argv[1] = "../../glsl/texturingNEW.vert";
+        argv[2] = "../../glsl/texturingNEW.frag";
         PROGRAM_ID = UtilGLSL::initShaderProgram(argc, argv);
     }
 
     // init application
     initRendering();
-    initModel();
+    initModels();
     initMenu();
 
     // entering GLUT/FLTK main event loop until user exits

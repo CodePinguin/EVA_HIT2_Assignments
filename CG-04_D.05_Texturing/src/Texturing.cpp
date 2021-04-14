@@ -73,54 +73,83 @@ void glutDisplayCB(void)
     // bind currently selected texture
     glBindTexture(GL_TEXTURE_2D, TEX_NAME[CURRENT_TEX]);
 
-    switch (CURRENT_DRAW_MODEL)
-    {
-        case DRAW_CUBE:
-        {
-            // setup texture matrix
-            texture_matrix = glm::scale(texture_matrix, glm::vec3(2.0f, -2.0f, 2.0f));
-            glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+    //switch (CURRENT_DRAW_MODEL)
+    //{
+    //    case DRAW_CUBE:
+    //    {
+    //        // setup texture matrix
+    //        texture_matrix = glm::scale(texture_matrix, glm::vec3(2.0f, -2.0f, 2.0f));
+    //        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+    //
+    //        // scale cube
+    //        modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
+    //
+    //        // draw cube
+    //        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+    //        TheCube->draw();
+    //        break;
+    //    }
+    //    case DRAW_SPHERE:
+    //    {
+    //        // setup texture matrix
+    //        texture_matrix = glm::scale(texture_matrix, glm::vec3(4.0f, 4.0f, 4.0f));
+    //        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+    //
+    //        // scale rotate sphere
+    //        modelview = glm::rotate(modelview, glm::radians<float>(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    //        modelview = glm::scale(modelview, glm::vec3(2.2f, 2.2f, 2.2f));
+    //
+    //        // draw sphere
+    //        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+    //        TheSphere->draw();
+    //        break;
+    //    }
+    //    case DRAW_TEAPOT:
+    //    {
+    //        // setup texture matrix
+    //        texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
+    //        texture_matrix = glm::rotate(texture_matrix, glm::radians<float>(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    //        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+    //
+    //        // move teapot into origin and rotate 270 degree around x-axis (post multiply order)
+    //        modelview = glm::rotate(modelview, glm::radians<float>(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    //        modelview = glm::translate(modelview, glm::vec3(0.0f, 0.0f, -1.5f));
+    //
+    //        // draw teapot with offset (i.e. origin centered)
+    //        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+    //        TheTeapot->draw();
+    //        break;
+    //    }
+    //}
 
-            // scale cube
-            modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
+     // setup texture matrix
+    texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
+    glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
 
-            // draw cube
-            glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-            TheCube->draw();
-            break;
-        }
-        case DRAW_SPHERE:
-        {
-            // setup texture matrix
-            texture_matrix = glm::scale(texture_matrix, glm::vec3(4.0f, 4.0f, 4.0f));
-            glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+    // scale cube
 
-            // scale rotate sphere
-            modelview = glm::rotate(modelview, glm::radians<float>(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            modelview = glm::scale(modelview, glm::vec3(2.2f, 2.2f, 2.2f));
+    // draw cube
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
 
-            // draw sphere
-            glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-            TheSphere->draw();
-            break;
-        }
-        case DRAW_TEAPOT:
-        {
-            // setup texture matrix
-            texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
-            texture_matrix = glm::rotate(texture_matrix, glm::radians<float>(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+    glEnable(GL_TEXTURE_2D);
 
-            // move teapot into origin and rotate 270 degree around x-axis (post multiply order)
-            modelview = glm::rotate(modelview, glm::radians<float>(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            modelview = glm::translate(modelview, glm::vec3(0.0f, 0.0f, -1.5f));
+    glBegin(GL_QUADS);
+        // Bottom left
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2i(0.0f, 10.0f);
 
-            // draw teapot with offset (i.e. origin centered)
-            glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-            TheTeapot->draw();
-            break;
-        }
-    }
+        // Top left
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2i(0.0f, 0.0f);
+
+        // Top right
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2i(10.0f, 0.0f);
+
+        // Bottom right
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2i(10.0f, 10.0f);
+    glEnd();
 
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();

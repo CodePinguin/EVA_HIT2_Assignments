@@ -25,7 +25,7 @@ layout (std140, binding = 4) uniform MaterialProperties
 layout (location = 0) in vec3 vecPosition;
 layout (location = 1) in vec3 vecNormal;
 layout (location = 2) in vec2 vecTexture;
-layout (location = 3) in vec4 vecColor;
+
 
 uniform mat4 matModelView;
 uniform mat4 matProjection;
@@ -34,20 +34,10 @@ uniform mat4 matTexture;
 
 out vec4 vecSurfaceColor;
 out vec4 texCoord;
-out vec4 use_texture;
 
 
 void main(void)
 {
-    use_texture = vec4(1,0,0,0);
-
-    if (vecColor.x > 0 || vecColor.y > 0 || vecColor.z > 0){
-        gl_Position = matProjection * matModelView * vec4(vecPosition, 1.0);
-        vecSurfaceColor = vecColor;
-        use_texture = vec4(0,0,0,0); //tell frag shader to use color normally
-        return;
-    }
-
     // calculate eye coordinates of vertex- and normal vectors, because
     // specular reflection is calculated in eye space coordinates
     vec3 position_ec = vec3(matModelView * vec4(vecPosition, 1.0));

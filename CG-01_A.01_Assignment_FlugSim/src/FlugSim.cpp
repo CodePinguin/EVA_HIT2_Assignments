@@ -34,9 +34,9 @@ GLint TEXTURE_MAT4_LOCATION = 0;
 GLint COLOR_VEC3_LOCATION = 0;
 
 GLenum POLYGON_MODE = GL_FRONT_AND_BACK;
-bool USE_WIREFRAME = false;
-bool USE_DEPTH_TEST = false;
-bool USE_CULLING = false;
+//bool USE_WIREFRAME = false;
+//bool USE_DEPTH_TEST = true;
+//bool USE_CULLING = false;
 int FPS = 50;
 
 glm::mat4 TheCameraView(1.0f);
@@ -45,16 +45,15 @@ GLuint TEX_NAME;
 
 int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
-string MENU_ENTRY_STR[4];
+string MENU_ENTRY_STR[3];
 
 float windowLength = 50.0f;
 
 // VAO
 GLuint VAO[2];
 
-// additional globals for shaft indices count
+// additional globals for indices count
 GLuint PLANE_INDICES_COUNT = 0;
-
 GLuint GROUND_INDICES_COUNT = 0;
 
 
@@ -124,7 +123,7 @@ void initModel(float windowLength)
 
     GLushort ground_indices[] =
     {
-        0, 2, 3,
+        0, 3, 2,
         1, 0, 2
     };
     GROUND_INDICES_COUNT = sizeof(ground_indices) / sizeof(ground_indices[0]);
@@ -144,22 +143,22 @@ void initModel(float windowLength)
     COLOR_VEC3_LOCATION = glGetAttribLocation(PROGRAM_ID, "vecColor");
 
 
-    // bind VAO for ground/shaft setup ////////////////////////////////////////////////////////////
+    // bind VAO for plane setup ////////////////////////////////////////////////////////////
     glBindVertexArray(VAO[0]);
 
-    // setup VBO for ground/shaft position and color vertex attributes
+    // setup VBO for plane position and color vertex attributes
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices) + sizeof(plane_colors), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(plane_vertices), plane_vertices);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(plane_vertices), sizeof(plane_colors), plane_colors);
 
-    // define ground/shaft position and color vertex attributes data format and enable them
+    // define plane position and color vertex attributes data format and enable them
     glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));
     glEnableVertexAttribArray(vecPosition);
     glVertexAttribPointer(COLOR_VEC3_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(plane_vertices)));
     glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
 
-    // setup EBO for ground/shaft face indices
+    // setup EBO for plane face indices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_indices), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(plane_indices), plane_indices);
@@ -201,7 +200,7 @@ void timerCB(int value) {
 
     //draw frame
     aircraft.UpdatePhysics(value);
-
+    
     if (aircraft.GetPos()[0] <= -20 || aircraft.GetPos()[0] >= 20 ||
         aircraft.GetPos()[1] <= -20 || aircraft.GetPos()[1] >= 50 ||
         aircraft.GetPos()[2] <= -20 || aircraft.GetPos()[2] >= 20)
@@ -236,15 +235,6 @@ void glutDisplayCB(void)
      std::cout << mouse[3][3] << std::endl;*/
 
 
-     //////////////
-     //  Ground  //
-     //////////////
-     // setup texture matrix
-    glm::mat4 texture_matrix(1.0f);
-
-    // bind currently selected texture
-    glBindTexture(GL_TEXTURE_2D, TEX_NAME);
-
 
     //////////////
     // Airplane //
@@ -266,6 +256,17 @@ void glutDisplayCB(void)
 
     glDrawElements(GL_TRIANGLES, PLANE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
 
+
+
+    //////////////
+    //  Ground  //
+    //////////////
+    
+    // setup texture matrix
+    glm::mat4 texture_matrix(1.0f);
+
+    //// bind currently selected texture
+    glBindTexture(GL_TEXTURE_2D, TEX_NAME);
     // setup texture matrix
     texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
     glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
@@ -283,10 +284,10 @@ void initRendering(float windowLength)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     // set background color
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     // clear window background
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
     // set rendering mode
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -358,6 +359,8 @@ void initRendering(float windowLength)
     glm::mat4 projection = glm::ortho(-windowLength, windowLength, -windowLength, windowLength, -windowLength, windowLength);
     glUniformMatrix4fv(PROJECTION_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(projection));
 }
+
+
 
 
 void initMenuChange(int entry, char* name, int value)
@@ -491,7 +494,6 @@ int main(int argc, char *argv[])
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     aircraft = Aircraft();
-
 
     // init GLUT/FLTK settings
     glutInit(&argc, argv);

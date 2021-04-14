@@ -41,7 +41,8 @@ void main(void)
 {
     use_texture = vec4(1,0,0,0);
 
-    if (vecColor.x > 0 || vecColor.y > 0 || vecColor.z > 0){
+    if (vecColor.x > 0 || vecColor.y > 0 || vecColor.z > 0)
+    {
         gl_Position = matProjection * matModelView * vec4(vecPosition, 1.0);
         vecSurfaceColor = vecColor;
         use_texture = vec4(0,0,0,0); //tell frag shader to use color normally

@@ -1,6 +1,5 @@
 #include "../inc/Aircraft.h"
 
-
 Aircraft::Aircraft() {
     Reset();
 }
@@ -34,7 +33,6 @@ glm::mat4 Aircraft::GetRot() {
 glm::vec4 Aircraft::GetPos() {
 	return currentPos;
 }
-
 
 glm::mat4 Aircraft::GetR(int axes) {
 

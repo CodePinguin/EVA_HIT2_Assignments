@@ -33,6 +33,7 @@ GLint PROJECTION_MAT4_LOCATION = 0;
 GLint TEXTURE_MAT4_LOCATION = 0;
 GLint COLOR_VEC3_LOCATION = 0;
 
+
 int FPS = 50;
 
 glm::mat4 TheCameraView(1.0f);
@@ -43,14 +44,14 @@ int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
 string MENU_ENTRY_STR[3];
 
-float windowLength = 50.0f;
+float windowLength = 100.0f;
 
 // VAO
 GLuint VAO[2];
 
 // additional globals for indices count
-GLuint PLANE_INDICES_COUNT = 0;
 GLuint GROUND_INDICES_COUNT = 0;
+GLuint PLANE_INDICES_COUNT = 0;
 
 
 Aircraft aircraft;
@@ -58,16 +59,16 @@ Aircraft aircraft;
 
 void initModel(float windowLength)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-{
+{   
     // definition of plane vertices
-    float width = 1.5f;
+    float width = 2.5f;
     GLfloat plane_vertices[] =
     {
         -width,  0.0f,  -width, 1.0f,
         -width,  0.0f,    0.0f, 1.0f,
         -width,  0.0f,   width, 1.0f,
          width,  0.0f,    0.0f, 1.0f,
-        -width, -width/2, 0.0f, 1.0f
+        -width, -width / 2, 0.0f, 1.0f
     };
 
 
@@ -92,7 +93,7 @@ void initModel(float windowLength)
 
     /////////////////////////////////////////////////////////////////////////////////////////
     // define ground vertices
-    float length = windowLength/5 * 2;
+    float length = windowLength/2;
     GLfloat ground_vertices[] =
     {
         -length,  -length,   length, 1.0f, //v0
@@ -133,11 +134,14 @@ void initModel(float windowLength)
     // create local EBOs
     GLuint ebo;
     glGenBuffers(1, &ebo);
+    
 
+    glGenVertexArrays(1, &VAO[0]);
     // get position and color vertex attribute locations (requires compiled shader program!)
     GLuint vecPosition = glGetAttribLocation(PROGRAM_ID, "vecPosition");
     COLOR_VEC3_LOCATION = glGetAttribLocation(PROGRAM_ID, "vecColor");
 
+    glGenVertexArrays(1, &VAO[0]);
 
     // bind VAO for plane setup ////////////////////////////////////////////////////////////
     glBindVertexArray(VAO[0]);
@@ -158,8 +162,9 @@ void initModel(float windowLength)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_indices), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(plane_indices), plane_indices);
+    
 
-
+    ////////////////////////////////////////// GROUND //////////////////////////////////////
     glBindVertexArray(VAO[1]);
 
     unsigned int handle[4];
@@ -197,9 +202,9 @@ void timerCB(int value) {
     //draw frame
     aircraft.UpdatePhysics(value);
     
-    if (aircraft.GetPos()[0] <= -20 || aircraft.GetPos()[0] >= 20 ||
-        aircraft.GetPos()[1] <= -20 || aircraft.GetPos()[1] >= 50 ||
-        aircraft.GetPos()[2] <= -20 || aircraft.GetPos()[2] >= 20)
+    if (aircraft.GetPos()[0] <= -50 || aircraft.GetPos()[0] >= 50 ||
+        aircraft.GetPos()[1] <= -50 || aircraft.GetPos()[1] >= 100 ||
+        aircraft.GetPos()[2] <= -50 || aircraft.GetPos()[2] >= 50)
     {
         aircraft.Reset();
         std::cout << "You crashed, but you get another chance." << std::endl;
@@ -438,7 +443,7 @@ void glutMenuCB(int key)
         }
         
         // Reset Settings
-        case 'r': case 'R': default:
+        case 'r': case 'R':
         {
             cout << "Reset Settings to Default..." << endl;
 
@@ -488,7 +493,7 @@ int main(int argc, char *argv[])
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | FL_OPENGL3);
     glutInitWindowPosition(100, 100);
-    glutInitWindowSize(800, 800);
+    glutInitWindowSize(600, 600);
     glutCreateWindow("Flight Simulator");
 
     // register extension wrapper library (GLEW)
@@ -545,6 +550,19 @@ int main(int argc, char *argv[])
         argv[2] = "../../glsl/FlugSim.frag";
         PROGRAM_ID = UtilGLSL::initShaderProgram(argc, argv);
     }
+
+    // text message
+    cout << "----------------------------------------------------------------" << endl;
+    cout << "This is a small flight simulator." << endl;
+    cout << "You can control the paper plane with pitch, roll and yaw inputs." << endl;
+    cout << "Key for pitching: W and S" << endl;
+    cout << "Key for yawing: O and P" << endl;
+    cout << "Key for rolling: A and S" << endl;
+    cout << "Key for increasing the velocity: spacebar" << endl;
+    cout << "Key for decreasing velocity: M" << endl;
+    cout << "When you are out of the flight zone, your state is reset." << endl;
+    cout << "Have fun." << endl;
+    cout << "----------------------------------------------------------------" << endl;
 
     // init application
     initRendering(windowLength);

@@ -33,10 +33,6 @@ GLint PROJECTION_MAT4_LOCATION = 0;
 GLint TEXTURE_MAT4_LOCATION = 0;
 GLint COLOR_VEC3_LOCATION = 0;
 
-//GLenum POLYGON_MODE = GL_FRONT_AND_BACK;
-//bool USE_WIREFRAME = false;
-//bool USE_DEPTH_TEST = true;
-//bool USE_CULLING = false;
 int FPS = 50;
 
 glm::mat4 TheCameraView(1.0f);
@@ -128,7 +124,7 @@ void initModel(float windowLength)
     };
     GROUND_INDICES_COUNT = sizeof(ground_indices) / sizeof(ground_indices[0]);
 
-    glGenVertexArrays(2, &VAO[0]);
+    glGenVertexArrays(1, &VAO[0]);
 
     // create local VBOs
     GLuint vbo;
@@ -219,7 +215,6 @@ void glutDisplayCB(void)
     // clear window background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
     // apply trackball transformation to modelview matrix
     glm::mat4 mouse = TrackBall::getTransformation();
     //mouse[3][3] = .5; // zoom in
@@ -234,14 +229,11 @@ void glutDisplayCB(void)
      mouse = TheCameraView * inverse(camRot);
      std::cout << mouse[3][3] << std::endl;*/
 
-
-
     //////////////
     // Airplane //
     //////////////
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
 
-    
 
     glm::mat4 plainTransform = aircraft.GetRot();
     glm::vec4 currentPos = aircraft.GetPos();
@@ -293,7 +285,7 @@ void initRendering(float windowLength)
     // set rendering mode
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 
     // define fixed light source position and properties (in eye space coordinates)
     glm::vec4 position(0.0f, 0.0f, 20.0f, 1.0f);

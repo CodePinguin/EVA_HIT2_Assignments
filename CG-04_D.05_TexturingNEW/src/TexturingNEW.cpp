@@ -43,21 +43,53 @@ int MENU_VALUE = 0;
 string MENU_ENTRY_STR[3];
 
 
-GLuint VAO;
+GLuint VAO[2];
 GLuint GROUND_INDICES_COUNT = 0;
+GLuint PLANE_INDICES_COUNT = 0;
 
 
 
 void initModels(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    float width = 0.3f;
+    // definition of plane vertices
+    float width = 0.5f;
+    GLfloat plane_vertices[] =
+    {
+        -width,  0.0f,  -width, 1.0f,
+        -width,  0.0f,    0.0f, 1.0f,
+        -width,  0.0f,   width, 1.0f,
+         width,  0.0f,    0.0f, 1.0f,
+        -width, -width / 2, 0.0f, 1.0f
+    };
+
+
+    // definition of ground colors, each vertex has its own color definition (RGB)
+    GLfloat plane_colors[] =
+    {
+        1.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 1.0f
+    };
+
+    // definition of plane face indices
+    GLushort plane_indices[] =
+    {
+        0, 1, 3,
+        2, 1, 3,
+        4, 1, 3
+    };
+    PLANE_INDICES_COUNT = sizeof(plane_indices) / sizeof(plane_indices[0]);
+    
+    float length = 1.0f;
     GLfloat ground_vertices[] =
     {
-        -width, -width-1,  width, 1.0f,  // v0
-         width, -width-1,  width, 1.0f,  // v1
-         width, -width-1, -width, 1.0f,  // v2
-        -width, -width-1, -width, 1.0f,  // v3
+        -length, -length,  length, 1.0f,  // v0
+         length, -length,  length, 1.0f,  // v1
+         length, -length, -length, 1.0f,  // v2
+        -length, -length, -length, 1.0f,  // v3
     };
 
     GLfloat ground_colors[] =
@@ -84,10 +116,9 @@ void initModels(void)
     {
         0, 3, 2, 1, 0, 2,
     };
-
     GROUND_INDICES_COUNT = sizeof(ground_indices) / sizeof(ground_indices[0]);
 
-    glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &VAO[0]);
 
     // create local VBOs
     GLuint vbo;
@@ -101,9 +132,30 @@ void initModels(void)
     GLuint vecPosition = glGetAttribLocation(PROGRAM_ID, "vecPosition");
     COLOR_VEC3_LOCATION = glGetAttribLocation(PROGRAM_ID, "vecColor");
 
+    // bind VAO for plane setup ////////////////////////////////////////////////////////////
+    glBindVertexArray(VAO[0]);
+
+
+    // setup VBO for plane position and color vertex attributes
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices) + sizeof(plane_colors), nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(plane_vertices), plane_vertices);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(plane_vertices), sizeof(plane_colors), plane_colors);
+
+    // define plane position and color vertex attributes data format and enable them
+    glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));
+    glEnableVertexAttribArray(vecPosition);
+    glVertexAttribPointer(COLOR_VEC3_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(plane_vertices)));
+    glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
+
+    // setup EBO for plane face indices
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_indices), nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(plane_indices), plane_indices);
+
 
     // bind VAO
-    glBindVertexArray(VAO);
+    glBindVertexArray(VAO[1]);
 
     unsigned int handle[4];
     glGenBuffers(4, handle);
@@ -143,6 +195,8 @@ void glutDisplayCB(void)
     glm::mat4 mouse = TrackBall::getTransformation();
     modelview = modelview * mouse;
 
+    glBindVertexArray(VAO[0]);
+    glDrawElements(GL_TRIANGLES, PLANE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
 
     
     
@@ -162,7 +216,7 @@ void glutDisplayCB(void)
     glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
     
-    glBindVertexArray(VAO);
+    glBindVertexArray(VAO[1]);
     glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
     
     glutSwapBuffers();

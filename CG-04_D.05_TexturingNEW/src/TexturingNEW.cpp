@@ -25,7 +25,6 @@ using namespace std;
 #include "../../_COMMON/inc/UtilOpenGL.h"
 #include "../../_COMMON/inc/UtilGLSL.h"
 #include "../../_COMMON/inc/UtilImage.h"
-#include "../../_COMMON/inc/vbocube.h"
 
 
 // application global variables and constants /////////////////////////////////////////////////////
@@ -36,7 +35,6 @@ GLint TEXTURE_MAT4_LOCATION = 0;
 GLint COLOR_VEC3_LOCATION = 0;
 
 glm::mat4 TheCameraView(1.0f);
-VBOCube* TheCube = nullptr;
 
 GLuint TEX_NAME;
 
@@ -44,7 +42,6 @@ int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
 string MENU_ENTRY_STR[3];
 
-enum DRAW_TYPE {DRAW_CUBE};
 
 GLuint VAO;
 GLuint GROUND_INDICES_COUNT = 0;
@@ -54,8 +51,6 @@ GLuint GROUND_INDICES_COUNT = 0;
 void initModels(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    TheCube = new VBOCube;
-
     float width = 0.3f;
     GLfloat ground_vertices[] =
     {
@@ -77,7 +72,7 @@ void initModels(void)
         0.0f, 1.0f, 0.0f
     };
 
-    float tex[] =
+    float ground_tex[] =
     {
         0.0f, 0.0f,
         1.0f, 0.0f,
@@ -110,48 +105,28 @@ void initModels(void)
     // bind VAO
     glBindVertexArray(VAO);
 
-    // setup VBO for plane position and color vertex attributes
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(ground_vertices) + sizeof(ground_colors), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(ground_vertices), ground_vertices);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(ground_vertices), sizeof(ground_colors), ground_colors);
+    unsigned int handle[4];
+    glGenBuffers(4, handle);
 
-    // define plane position and color vertex attributes data format and enable them
-    glVertexAttribPointer(vecPosition, 4, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(0));
-    glEnableVertexAttribArray(vecPosition);
-    glVertexAttribPointer(COLOR_VEC3_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, GL_BUFFER_OFFSET(sizeof(ground_vertices)));
-    glEnableVertexAttribArray(COLOR_VEC3_LOCATION);
+    glBindBuffer(GL_ARRAY_BUFFER, handle[0]);
+    glBufferData(GL_ARRAY_BUFFER, 4 * 4 * sizeof(float), ground_vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer((GLuint)0, 4, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
+    glEnableVertexAttribArray(0);  // Vertex position
 
-    // setup EBO for plane face indices
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ground_indices), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(ground_indices), ground_indices);
+    glBindBuffer(GL_ARRAY_BUFFER, handle[1]);
+    glBufferData(GL_ARRAY_BUFFER, 4 * 3 * sizeof(float), ground_colors, GL_STATIC_DRAW);
+    glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
+    glEnableVertexAttribArray(1);  // Vertex normal
 
-    // if ground should have texture
-    //////unsigned int handle[4];
-    //////glGenBuffers(4, handle);
+    glBindBuffer(GL_ARRAY_BUFFER, handle[2]);
+    glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), ground_tex, GL_STATIC_DRAW);
+    glVertexAttribPointer((GLuint)2, 2, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
+    glEnableVertexAttribArray(2);  // texture coords
 
-    //////glBindBuffer(GL_ARRAY_BUFFER, handle[0]);
-    //////glBufferData(GL_ARRAY_BUFFER, 4 * 4 * sizeof(float), ground_vertices, GL_STATIC_DRAW);
-    //////glVertexAttribPointer((GLuint)0, 4, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
-    //////glEnableVertexAttribArray(0);  // Vertex position
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle[3]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(GLuint), ground_indices, GL_STATIC_DRAW);
 
-    //////glBindBuffer(GL_ARRAY_BUFFER, handle[1]);
-    //////glBufferData(GL_ARRAY_BUFFER, 4 * 3 * sizeof(float), ground_colors, GL_STATIC_DRAW);
-    //////glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
-    //////glEnableVertexAttribArray(1);  // Vertex normal
-
-    //////glBindBuffer(GL_ARRAY_BUFFER, handle[2]);
-    //////glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), tex, GL_STATIC_DRAW);
-    //////glVertexAttribPointer((GLuint)2, 2, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
-    //////glEnableVertexAttribArray(2);  // texture coords
-
-    //////glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle[3]);
-    //////glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(GLuint), ground_indices, GL_STATIC_DRAW);
-
-    //////glBindVertexArray(0);
-
-    
+    glBindVertexArray(0);
 }
 
 
@@ -169,11 +144,13 @@ void glutDisplayCB(void)
     modelview = modelview * mouse;
 
 
-    // Celina's smaller cube
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
+    
     
 
+    //////////////
+    //  Ground  //
+    //////////////
+    
     // setup texture matrix
     glm::mat4 texture_matrix(1.0f);
 
@@ -183,14 +160,10 @@ void glutDisplayCB(void)
     // setup texture matrix
     texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
     glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
-    
-    // scale cube
-    //modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
-    
-    // draw cube
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-    TheCube->draw();
-
+    
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
     
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();

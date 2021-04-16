@@ -185,7 +185,7 @@ void glutDisplayCB(void)
     glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
     
     // scale cube
-    modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
+    //modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
     
     // draw cube
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));

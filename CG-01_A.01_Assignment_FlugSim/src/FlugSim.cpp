@@ -33,7 +33,7 @@ GLint PROJECTION_MAT4_LOCATION = 0;
 GLint TEXTURE_MAT4_LOCATION = 0;
 GLint COLOR_VEC3_LOCATION = 0;
 
-GLenum POLYGON_MODE = GL_FRONT_AND_BACK;
+//GLenum POLYGON_MODE = GL_FRONT_AND_BACK;
 //bool USE_WIREFRAME = false;
 //bool USE_DEPTH_TEST = true;
 //bool USE_CULLING = false;
@@ -63,7 +63,7 @@ Aircraft aircraft;
 void initModel(float windowLength)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    // definition of plane/shaft vertices
+    // definition of plane vertices
     float width = 1.5f;
     GLfloat plane_vertices[] =
     {
@@ -75,7 +75,7 @@ void initModel(float windowLength)
     };
 
 
-    // definition of ground/shaft colors, each vertex has its own color definition (RGB)
+    // definition of ground colors, each vertex has its own color definition (RGB)
     GLfloat plane_colors[] =
     {
         1.0f, 0.0f, 1.0f,
@@ -85,7 +85,7 @@ void initModel(float windowLength)
         0.0f, 0.0f, 1.0f
     };
 
-    // definition of ground face indices (using GL_TRIANGLES --> 6)
+    // definition of plane face indices
     GLushort plane_indices[] =
     {
         0, 1, 3,
@@ -241,8 +241,7 @@ void glutDisplayCB(void)
     //////////////
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
 
-    // bind VAO to current drawing context
-    glBindVertexArray(VAO[0]);
+    
 
     glm::mat4 plainTransform = aircraft.GetRot();
     glm::vec4 currentPos = aircraft.GetPos();
@@ -254,6 +253,8 @@ void glutDisplayCB(void)
 
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(plainTransform));
 
+    // bind VAO to current drawing context
+    glBindVertexArray(VAO[0]);
     glDrawElements(GL_TRIANGLES, PLANE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
 
 
@@ -361,8 +362,6 @@ void initRendering(float windowLength)
 }
 
 
-
-
 void initMenuChange(int entry, char* name, int value)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
@@ -464,8 +463,6 @@ void glutMenuCB(int key)
 void initMenu()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    int sub_menu;
-
     // register callback and create menu
     glutCreateMenu(glutMenuCB);
     glutAddMenuEntry("Pitch + [W]", 'W');

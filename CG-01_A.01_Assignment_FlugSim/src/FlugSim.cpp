@@ -63,13 +63,25 @@ void initModel(float windowLength)
 {   
     // definition of plane vertices
     float width = 50.0f;
+    float thick = 1.5f;
+    float thickShaft = 1.5f;
+
     GLfloat plane_vertices[] =
     {
-        -width,  0.0f,  -width, 1.0f, //v0
-        -width,  0.0f,    0.0f, 1.0f, //v1
-        -width,  0.0f,   width, 1.0f, //v2
-         width,  0.0f,    0.0f, 1.0f, //v3
-        -width, -width/2, 0.0f, 1.0f  //v4
+        -width*1.5,  0.0f,      -width/3, 1.0f, //v0
+        -width,      0.0f,        0.0f,   1.0f, //v1
+        -width*1.5,  0.0f,       width/3, 1.0f, //v2
+         width,      0.0f,        0.0f,   1.0f, //v3
+                            
+        -width,  -width/4,  thickShaft,   1.0f, //v4 shaft right
+                            
+        -width*1.5, thick,      -width/3, 1.0f, //v5 // thickness of plain
+        -width,     thick,        0.0f,   1.0f, //v6
+        -width*1.5, thick,       width/3, 1.0f, //v7
+         width,     thick,        0.0f,   1.0f, //v8
+
+        -width,  -width/4, -thickShaft, 1.0f  //v9 // shaft left
+        
     };
 
 
@@ -80,15 +92,32 @@ void initModel(float windowLength)
         1.0f, 1.0f, 1.0f,
         1.0f, 1.0f, 0.0f,
         1.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 1.0f 
+
+        0.0f, 0.0f, 1.0f,
+
+        1.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f,
+
+        0.0f, 0.0f, 1.0f
     };
 
     // definition of plane face indices
     GLushort plane_indices[] =
     {
-        0, 1, 3,
-        2, 1, 3,
-        4, 1, 3
+        0, 1, 3, // left
+        5, 6, 8,
+        2, 1, 3, // right
+        7, 6, 8,
+        2, 7, 8, // side right
+        3, 2, 8,
+        0, 5, 8, // side left
+        0, 3, 8,
+        4, 1, 3, // shaft
+        9, 1, 3,
+        9, 4, 1,
+        9, 4, 3
     };
     PLANE_INDICES_COUNT = sizeof(plane_indices) / sizeof(plane_indices[0]);
 
@@ -292,7 +321,7 @@ void timerCB(int value) {
     aircraft.UpdatePhysics(value);
     
     if (aircraft.GetPos()[0] <= -windowLength || aircraft.GetPos()[0] >= windowLength ||
-        aircraft.GetPos()[1] <= -windowLength || aircraft.GetPos()[1] >= 1000 ||
+        aircraft.GetPos()[1] <= -windowLength || aircraft.GetPos()[1] >= windowLength ||
         aircraft.GetPos()[2] <= -windowLength || aircraft.GetPos()[2] >= windowLength)
     {
         aircraft.Reset();
@@ -309,7 +338,7 @@ void timerCB(int value) {
 /// <param name="planeRot">The rotation matrix (as a Homogeneous Transformation) matrix</param>
 /// <returns></returns>
 glm::mat4 GetCamTransform(glm::vec3 planePos, glm::mat4 planeRot) {
-    glm::vec4 offset = glm::vec4(-240.0f, 20.0f, 0.0f, 1.0f); // offset of camera behind aircraft (homogeneous matrix)
+    glm::vec4 offset = glm::vec4(-240.0f, 30.0f, 0.0f, 1.0f); // offset of camera behind aircraft (homogeneous matrix)
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
     offset = planeRot * offset;
     up = planeRot * up;
@@ -390,49 +419,6 @@ void initRendering(float windowLength)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-
-    // define fixed light source position and properties (in eye space coordinates)
-    glm::vec4 position(4999.0f, 4999.0f, 0.0f, 1.0f);
-    glm::vec4  ambient(0.8f, 0.8f, 0.8f, 1.0f);
-    glm::vec4  diffuse(0.8f, 0.8f, 0.8f, 1.0f);
-    glm::vec4 specular(1.0f, 1.0f, 1.0f, 1.0f);
-
-    // define material properties
-    glm::vec4  mat_ambient(0.1f, 0.1f, 0.1f, 1.0f);
-    glm::vec4  mat_diffuse(0.1f, 0.1f, 0.9f, 1.0f);
-    glm::vec4 mat_specular(1.0f, 1.0f, 1.0f, 1.0f);
-    GLfloat  mat_shininess = 64.0f;
-
-    // setup Uniform Buffer Objects (UBO)
-    GLuint ubo[2];
-    glGenBuffers(2, &ubo[0]);
-
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo[0]);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 4, nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(position));
-    glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(ambient));
-    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(diffuse));
-    glBufferSubData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(specular));
-
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo[1]);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::vec4) * 3 + sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(mat_ambient));
-    glBufferSubData(GL_UNIFORM_BUFFER, 1 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(mat_diffuse));
-    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), sizeof(glm::vec4), glm::value_ptr(mat_specular));
-    glBufferSubData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::vec4), sizeof(GLfloat), &mat_shininess);
-
-
-    // bind uniform buffer objects to uniform blocks using the shader provided binding point
-    GLuint ubo_index = 0;
-    GLint ubo_binding = 0;
-
-    ubo_index = glGetUniformBlockIndex(PROGRAM_ID, "LightProperties");
-    glGetActiveUniformBlockiv(PROGRAM_ID, ubo_index, GL_UNIFORM_BLOCK_BINDING, &ubo_binding);
-    glBindBufferBase(GL_UNIFORM_BUFFER, ubo_binding, ubo[0]);
-
-    ubo_index = glGetUniformBlockIndex(PROGRAM_ID, "MaterialProperties");
-    glGetActiveUniformBlockiv(PROGRAM_ID, ubo_index, GL_UNIFORM_BLOCK_BINDING, &ubo_binding);
-    glBindBufferBase(GL_UNIFORM_BUFFER, ubo_binding, ubo[1]);
 
     GLint location = glGetUniformLocation(PROGRAM_ID, "ReplaceColor");
     glUniform1i(location, true);

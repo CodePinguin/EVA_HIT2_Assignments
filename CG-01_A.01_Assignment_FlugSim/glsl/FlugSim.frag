@@ -2,7 +2,6 @@
 
 #version 400
 
-
 uniform sampler2D texImage;
 uniform bool ReplaceColor = true;
 

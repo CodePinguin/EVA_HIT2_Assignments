@@ -49,39 +49,9 @@ void main(void)
         return;
     }
 
-    // calculate eye coordinates of vertex- and normal vectors, because
-    // specular reflection is calculated in eye space coordinates
-    vec3 position_ec = vec3(matModelView * vec4(vecPosition, 1.0));
-
-    // transform vertex normal orientation into eye coordinates using normal matrix
-    mat3 normal_matrix = transpose( inverse( mat3(matModelView) ) );
-    vec3 N = normalize( normal_matrix * vecNormal );
-
-    // calculate vector from vertex to point light source in eye coordinates
-    vec3 L = normalize(ubLightSource.position.xyz - position_ec);
-
-    // calculate vector from vertex to view/eye point
-    // (we are in eye coordinates, so eye position is (0,0,0))
-    vec3 V = normalize(-position_ec);
-
-    // calculate reflection vector using built-in function reflect()
-    // (reflect() requires incident direction of point light vector, so reverse direction)
-    vec3 R = normalize(reflect(-L, N));
-
-    // calculate ambient term using light and material components
-    vec4 Iamb = ubLightSource.ambient * ubMaterial.ambient;
-
-    // calculate diffuse term using light and material components
-    vec4 Idiff = ubLightSource.diffuse * ubMaterial.diffuse * max(dot(L, N), 0.0);
-
-    // calculate specular term using light and material components
-    vec4 Ispec = ubLightSource.specular * ubMaterial.specular * pow( max(dot(R, V), 0.0), ubMaterial.shininess );
-
-    // summation of total light intensity (ignoring emissive component)
-    vec4 Itotal = Iamb + Idiff + Ispec;
 
     // output total fragment color
-    vecSurfaceColor = Itotal;
+    vecSurfaceColor = vec4(1,1,1,1); // Itotal;
 
     // use model texture coordinates and transform with texture matrix
     texCoord = matTexture * vec4(vecTexture, 0.0, 1.0);

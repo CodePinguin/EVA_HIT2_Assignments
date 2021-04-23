@@ -14,7 +14,7 @@ void Aircraft::Reset() {
 	velocity = 0;
 	
 	currentTransform = glm::mat4(1.0f);
-	currentPos = glm::vec4(0, 200.0f, 0, 0);
+	currentPos = glm::vec4(0, 0.0f, 0, 0);
 }
 
 glm::mat4 Aircraft::GetRot() {

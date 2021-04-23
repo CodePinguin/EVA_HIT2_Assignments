@@ -45,7 +45,7 @@ int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
 string MENU_ENTRY_STR[3];
 
-float windowLength = 1000.0f;
+float windowLength = 5000.0f;
 
 // VAO
 GLuint VAO[2];
@@ -94,36 +94,124 @@ void initModel(float windowLength)
 
     /////////////////////////////////////////////////////////////////////////////////////////
     // define ground vertices
-    float length = windowLength * 2/3;
-    GLfloat ground_vertices[] =
+    GLfloat ground_vertices[24 * 3] = 
     {
-        -length,  -windowLength,   length, 1.0f, //v0
-         length,  -windowLength,   length, 1.0f, //v1
-         length,  -windowLength,  -length, 1.0f, //v2
-        -length,  -windowLength,  -length, 1.0f  //v3          
+        // Front
+       -windowLength, -windowLength,  windowLength, //v0
+        windowLength, -windowLength,  windowLength, //v1
+        windowLength,  windowLength,  windowLength, //v2
+       -windowLength,  windowLength,  windowLength, //v3
+       // Righ       
+        windowLength, -windowLength,  windowLength, //v4
+        windowLength, -windowLength, -windowLength, //v5
+        windowLength,  windowLength, -windowLength, //v6
+        windowLength,  windowLength,  windowLength, //v7
+       // Back      
+       -windowLength, -windowLength, -windowLength, //v8
+       -windowLength,  windowLength, -windowLength, //v9
+        windowLength,  windowLength, -windowLength, //v10
+        windowLength, -windowLength, -windowLength, //v11
+       // Left       
+       -windowLength, -windowLength,  windowLength, //v12
+       -windowLength,  windowLength,  windowLength, //v13
+       -windowLength,  windowLength, -windowLength, //v14
+       -windowLength, -windowLength, -windowLength, //v15
+       // Bottom    
+       -windowLength, -windowLength,  windowLength, //v16
+       -windowLength, -windowLength, -windowLength, //v17
+        windowLength, -windowLength, -windowLength, //v18
+        windowLength, -windowLength,  windowLength, //v19
+       // Top      
+       -windowLength,  windowLength,  windowLength, //v20
+        windowLength,  windowLength,  windowLength, //v21
+        windowLength,  windowLength, -windowLength, //v22
+       -windowLength,  windowLength, -windowLength  //v23
     };
 
-    GLfloat ground_colors[] =
+    GLfloat ground_colors[24 * 3] = 
     {
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f
+        // Front
+         0.0f,  0.0f,  1.0f,
+         0.0f,  0.0f,  1.0f,
+         0.0f,  0.0f,  1.0f,
+         0.0f,  0.0f,  1.0f,
+        // Right      
+         1.0f,  0.0f,  0.0f,
+         1.0f,  0.0f,  0.0f,
+         1.0f,  0.0f,  0.0f,
+         1.0f,  0.0f,  0.0f,
+        // Back 
+         0.0f,  0.0f, -1.0f,
+         0.0f,  0.0f, -1.0f,
+         0.0f,  0.0f, -1.0f,
+         0.0f,  0.0f, -1.0f,
+        // Left 
+        -1.0f,  0.0f,  0.0f,
+        -1.0f,  0.0f,  0.0f,
+        -1.0f,  0.0f,  0.0f,
+        -1.0f,  0.0f,  0.0f,
+        // Bottom      
+         0.0f, -1.0f,  0.0f,
+         0.0f, -1.0f,  0.0f,
+         0.0f, -1.0f,  0.0f,
+         0.0f, -1.0f,  0.0f,
+        // Top         
+         0.0f,  1.0f,  0.0f,
+         0.0f,  1.0f,  0.0f,
+         0.0f,  1.0f,  0.0f,
+         0.0f,  1.0f,  0.0f
     };
 
-    float ground_tex[] =
+    float ground_tex[24 * 2] = 
     {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 1.0f
+        // Front
+        1.0f/4.0f, 1.0f/3.0f,
+        2.0f/4.0f, 1.0f/3.0f,
+        2.0f/4.0f, 0.0f/3.0f,
+        1.0f/4.0f, 0.0f/3.0f,
+        // Right
+        2.0f/4.0f, 1.0f/3.0f,
+        2.0f/4.0f, 2.0f/3.0f,
+        3.0f/4.0f, 2.0f/3.0f,
+        3.0f/4.0f, 1.0f/3.0f,
+        // Back
+        1.0f/4.0f, 2.0f/3.0f,
+        1.0f/4.0f, 3.0f/3.0f,
+        2.0f/4.0f, 3.0f/3.0f,
+        2.0f/4.0f, 2.0f/3.0f,
+        // Left
+        1.0f/4.0f, 1.0f/3.0f,
+        0.0f/4.0f, 1.0f/3.0f,
+        0.0f/4.0f, 2.0f/3.0f,
+        1.0f/4.0f, 2.0f/3.0f,
+        // Bottom
+        1.0f/4.0f, 1.0f/3.0f,
+        1.0f/4.0f, 2.0f/3.0f,
+        2.0f/4.0f, 2.0f/3.0f,
+        2.0f/4.0f, 1.0f/3.0f,
+        // Top
+        4.0f/4.0f, 1.0f/3.0f,
+        3.0f/4.0f, 1.0f/3.0f,
+        3.0f/4.0f, 2.0f/3.0f,
+        4.0f/4.0f, 2.0f/3.0f
     };
 
-    GLushort ground_indices[] =
+    GLushort ground_indices[] = 
     {
-        0, 3, 2,
-        1, 0, 2
+        0,  1,   2, // front
+        0,  2,   3,
+        4,  5,   6, // right
+        4,  6,   7,
+        8,  9,  10, // back
+        8,  10, 11,
+        12, 13, 14, // left
+        12, 14, 15,
+        16, 17, 18, //bottom
+        16, 18, 19,
+        20, 21, 22, // top 
+        20, 22, 23
     };
+
     GROUND_INDICES_COUNT = sizeof(ground_indices) / sizeof(ground_indices[0]);
 
     glGenVertexArrays(1, &VAO[0]);
@@ -172,17 +260,17 @@ void initModel(float windowLength)
     glGenBuffers(4, handle);
 
     glBindBuffer(GL_ARRAY_BUFFER, handle[0]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 4 * sizeof(float), ground_vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer((GLuint)0, 4, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
+    glBufferData(GL_ARRAY_BUFFER, 24*3 * sizeof(float), ground_vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
     glEnableVertexAttribArray(0);  // Vertex position
 
     glBindBuffer(GL_ARRAY_BUFFER, handle[1]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 3 * sizeof(float), ground_colors, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 24 * 3 * sizeof(float), ground_colors, GL_STATIC_DRAW);
     glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
     glEnableVertexAttribArray(1);  // Vertex normal
 
     glBindBuffer(GL_ARRAY_BUFFER, handle[2]);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), ground_tex, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 24 * 2 * sizeof(float), ground_tex, GL_STATIC_DRAW);
     glVertexAttribPointer((GLuint)2, 2, GL_FLOAT, GL_FALSE, 0, ((GLubyte*)NULL + (0)));
     glEnableVertexAttribArray(2);  // texture coords
 
@@ -203,11 +291,11 @@ void timerCB(int value) {
     //draw frame
     aircraft.UpdatePhysics(value);
     
-    if (aircraft.GetPos()[0] <= -windowLength* 2/3 || aircraft.GetPos()[0] >= windowLength * 2 / 3 ||
-        aircraft.GetPos()[1] <= -windowLength      || aircraft.GetPos()[1] >= 1000 ||
-        aircraft.GetPos()[2] <= -windowLength* 2/3 || aircraft.GetPos()[2] >= windowLength * 2 / 3)
+    if (aircraft.GetPos()[0] <= -windowLength || aircraft.GetPos()[0] >= windowLength ||
+        aircraft.GetPos()[1] <= -windowLength || aircraft.GetPos()[1] >= 1000 ||
+        aircraft.GetPos()[2] <= -windowLength || aircraft.GetPos()[2] >= windowLength)
     {
-        //aircraft.Reset();
+        aircraft.Reset();
         std::cout << "You crashed, but you get another chance." << std::endl;
     }
 
@@ -250,8 +338,7 @@ void glutDisplayCB(void)
     planeTransform[3][1] = camPos.y;
     planeTransform[3][2] = camPos.z;
 
-    glm::mat4 cameraTransform = TrackBall::getTransformation() * GetCamTransform(glm::vec3(camPos), camRot);
-
+    glm::mat4 cameraTransform = TrackBall::getTransformation() * GetCamTransform(glm::vec3(camPos), camRot); //*TheCameraView;
 
     //////////////
     // Aircraft //
@@ -305,7 +392,7 @@ void initRendering(float windowLength)
     glEnable(GL_DEPTH_TEST);
 
     // define fixed light source position and properties (in eye space coordinates)
-    glm::vec4 position(0.0f, 0.0f, 20.0f, 1.0f);
+    glm::vec4 position(4999.0f, 4999.0f, 0.0f, 1.0f);
     glm::vec4  ambient(0.8f, 0.8f, 0.8f, 1.0f);
     glm::vec4  diffuse(0.8f, 0.8f, 0.8f, 1.0f);
     glm::vec4 specular(1.0f, 1.0f, 1.0f, 1.0f);
@@ -351,10 +438,10 @@ void initRendering(float windowLength)
     glUniform1i(location, true);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
-    UtilImage::loadPNGTexture("../../png/map.png", &TEX_NAME); // Pointer to image data
-    
+    UtilImage::loadPNGTexture("../../png/world.png", &TEX_NAME); // Pointer to image data
+ 
     // setup the camera view matrix
-    TheCameraView = glm::lookAt(glm::vec3(-100.0f, -666.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    TheCameraView = glm::lookAt(glm::vec3(0.0f, 10.0f, 10.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // get modelview matrix uniform location
     MODELVIEW_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matModelView");
@@ -366,7 +453,7 @@ void initRendering(float windowLength)
     TEXTURE_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matTexture");
 
     // setup orthographic projection matrix
-    glm::mat4 projection = glm::perspective(glm::radians<float>(60.0f), 1.0f, 1.0f, 2000.0f);
+    glm::mat4 projection = glm::perspective(glm::radians<float>(60.0f), 1.0f, 1.0f, 2 * 10000.0f);
     glUniformMatrix4fv(PROJECTION_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
@@ -395,6 +482,7 @@ void glutMenuCB(int key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     double delta = .05;
+    double transDelta = 3;
     switch (key)
     {
         //case 't': // key for testing
@@ -464,11 +552,31 @@ void glutMenuCB(int key)
             exit(0);
             break;
         }
+
+        case 'u':
+            TheCameraView[3][0] += transDelta;
+            break;
+        case 'j':
+            TheCameraView[3][0] -= transDelta;
+            break;
+        case 'h':
+            TheCameraView[3][2] -= transDelta;
+            break;
+        case 'k':
+            TheCameraView[3][2] += transDelta;
+            break;
+        case '.':
+            TheCameraView[3][1] += transDelta;
+            break;
+        case ',':
+            TheCameraView[3][1] -= transDelta;
+            break;
+
         
         // Reset Settings
         case 'r': case 'R':
         {
-            cout << "Reset Settings to Default..." << endl;
+            std::cout << "Reset Settings to Default..." << endl;
 
             aircraft.Reset();
             TrackBall::resetTransformation();
@@ -532,19 +640,19 @@ int main(int argc, char *argv[])
     // show version of OpenGL and GLSL
     UtilOpenGL::showOpenGLVersion();
     UtilOpenGL::showGLSLVersion();
-    cout << endl;
+    std::cout << endl;
 
     // show version of C++ and compiler
     UtilCPP::showCPPLanguageVer();
     UtilCPP::showCPPCompilerVer();
-    cout << endl;
+    std::cout << endl;
 
     // check for shader 4.x support
     if (UtilOpenGL::checkOpenGLVersion() < 4.0)
     {
-        cout << "Program requires OpenGL Version >= 4.x (Supported: ";
-        cout << UtilOpenGL::checkOpenGLVersion() << ") - exiting!" << endl;
-        cout << "Press ENTER to continue... " << endl;
+        std::cout << "Program requires OpenGL Version >= 4.x (Supported: ";
+        std::cout << UtilOpenGL::checkOpenGLVersion() << ") - exiting!" << endl;
+        std::cout << "Press ENTER to continue... " << endl;
         cin.ignore();
         exit(1);
     }
@@ -578,17 +686,17 @@ int main(int argc, char *argv[])
     }
 
     // text message
-    cout << "----------------------------------------------------------------" << endl;
-    cout << "This is a small flight simulator." << endl;
-    cout << "You can control the paper aircraft with pitch, roll and yaw inputs." << endl;
-    cout << "Key for pitching: W and S" << endl;
-    cout << "Key for yawing: O and P" << endl;
-    cout << "Key for rolling: A and S" << endl;
-    cout << "Key for increasing the velocity: spacebar" << endl;
-    cout << "Key for decreasing velocity: M" << endl;
-    cout << "When you are out of the flight zone, your state is reset." << endl;
-    cout << "Have fun." << endl;
-    cout << "----------------------------------------------------------------" << endl;
+    std::cout << "----------------------------------------------------------------" << endl;
+    std::cout << "This is a small flight simulator." << endl;
+    std::cout << "You can control the paper aircraft with pitch, roll and yaw inputs." << endl;
+    std::cout << "Key for pitching: W and S" << endl;
+    std::cout << "Key for yawing: O and P" << endl;
+    std::cout << "Key for rolling: A and S" << endl;
+    std::cout << "Key for increasing the velocity: spacebar" << endl;
+    std::cout << "Key for decreasing velocity: M" << endl;
+    std::cout << "When you are out of the flight zone, your state is reset." << endl;
+    std::cout << "Have fun." << endl;
+    std::cout << "----------------------------------------------------------------" << endl;
 
     // init application
     initRendering(windowLength);

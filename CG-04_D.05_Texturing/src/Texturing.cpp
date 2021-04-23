@@ -73,83 +73,54 @@ void glutDisplayCB(void)
     // bind currently selected texture
     glBindTexture(GL_TEXTURE_2D, TEX_NAME[CURRENT_TEX]);
 
-    //switch (CURRENT_DRAW_MODEL)
-    //{
-    //    case DRAW_CUBE:
-    //    {
-    //        // setup texture matrix
-    //        texture_matrix = glm::scale(texture_matrix, glm::vec3(2.0f, -2.0f, 2.0f));
-    //        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
-    //
-    //        // scale cube
-    //        modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
-    //
-    //        // draw cube
-    //        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-    //        TheCube->draw();
-    //        break;
-    //    }
-    //    case DRAW_SPHERE:
-    //    {
-    //        // setup texture matrix
-    //        texture_matrix = glm::scale(texture_matrix, glm::vec3(4.0f, 4.0f, 4.0f));
-    //        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
-    //
-    //        // scale rotate sphere
-    //        modelview = glm::rotate(modelview, glm::radians<float>(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    //        modelview = glm::scale(modelview, glm::vec3(2.2f, 2.2f, 2.2f));
-    //
-    //        // draw sphere
-    //        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-    //        TheSphere->draw();
-    //        break;
-    //    }
-    //    case DRAW_TEAPOT:
-    //    {
-    //        // setup texture matrix
-    //        texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
-    //        texture_matrix = glm::rotate(texture_matrix, glm::radians<float>(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    //        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
-    //
-    //        // move teapot into origin and rotate 270 degree around x-axis (post multiply order)
-    //        modelview = glm::rotate(modelview, glm::radians<float>(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    //        modelview = glm::translate(modelview, glm::vec3(0.0f, 0.0f, -1.5f));
-    //
-    //        // draw teapot with offset (i.e. origin centered)
-    //        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
-    //        TheTeapot->draw();
-    //        break;
-    //    }
-    //}
+    switch (CURRENT_DRAW_MODEL)
+    {
+    case DRAW_CUBE:
+    {
+        // setup texture matrix
+        texture_matrix = glm::scale(texture_matrix, glm::vec3(2.0f, -2.0f, 2.0f));
+        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
 
-     // setup texture matrix
-    texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
-    glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+        // scale cube
+        modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
 
-    // scale cube
+        // draw cube
+        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+        TheCube->draw();
+        break;
+    }
+    case DRAW_SPHERE:
+    {
+        // setup texture matrix
+        texture_matrix = glm::scale(texture_matrix, glm::vec3(4.0f, 4.0f, 4.0f));
+        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
 
-    // draw cube
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+        // scale rotate sphere
+        modelview = glm::rotate(modelview, glm::radians<float>(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelview = glm::scale(modelview, glm::vec3(2.2f, 2.2f, 2.2f));
 
-    glEnable(GL_TEXTURE_2D);
+        // draw sphere
+        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+        TheSphere->draw();
+        break;
+    }
+    case DRAW_TEAPOT:
+    {
+        // setup texture matrix
+        texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
+        texture_matrix = glm::rotate(texture_matrix, glm::radians<float>(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
 
-    glBegin(GL_QUADS);
-        // Bottom left
-        glTexCoord2f(0.0f, 1.0f);
-        glVertex2i(0.0f, 10.0f);
+        // move teapot into origin and rotate 270 degree around x-axis (post multiply order)
+        modelview = glm::rotate(modelview, glm::radians<float>(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelview = glm::translate(modelview, glm::vec3(0.0f, 0.0f, -1.5f));
 
-        // Top left
-        glTexCoord2f(0.0f, 0.0f);
-        glVertex2i(0.0f, 0.0f);
-
-        // Top right
-        glTexCoord2f(1.0f, 0.0f);
-        glVertex2i(10.0f, 0.0f);
-
-        // Bottom right
-        glTexCoord2f(1.0f, 1.0f);
-        glVertex2i(10.0f, 10.0f);
-    glEnd();
+        // draw teapot with offset (i.e. origin centered)
+        glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(modelview));
+        TheTeapot->draw();
+        break;
+    }
+    }
 
     glutSwapBuffers();
     UtilOpenGL::checkOpenGLErrorCode();
@@ -186,9 +157,9 @@ void initRendering()
 
     // define fixed light source position and properties (in eye space coordinates)
     glm::vec4 position(0.0f, 0.0f, 20.0f, 1.0f);
-    glm::vec4  ambient(0.8f, 0.8f,  0.8f, 1.0f);
-    glm::vec4  diffuse(0.8f, 0.8f,  0.8f, 1.0f);
-    glm::vec4 specular(1.0f, 1.0f,  1.0f, 1.0f);
+    glm::vec4  ambient(0.8f, 0.8f, 0.8f, 1.0f);
+    glm::vec4  diffuse(0.8f, 0.8f, 0.8f, 1.0f);
+    glm::vec4 specular(1.0f, 1.0f, 1.0f, 1.0f);
 
     // define material properties
     glm::vec4  mat_ambient(0.1f, 0.1f, 0.1f, 1.0f);
@@ -308,87 +279,87 @@ void glutMenuCB(int key)
 {
     switch (key)
     {
-        case 'q': case 'Q': case 27: // handle escape keys [q],[Q],[ESC] and exit
+    case 'q': case 'Q': case 27: // handle escape keys [q],[Q],[ESC] and exit
+    {
+        exit(0);
+        break;
+    }
+    case ' ': // handle space key to cycle through available models
+    {
+        CURRENT_DRAW_MODEL = DRAW_TYPE((CURRENT_DRAW_MODEL + 1) % 3);
+
+        switch (CURRENT_DRAW_MODEL)
         {
-            exit(0);
+        case DRAW_CUBE:
+        {
+            CURRENT_DRAW_MODEL = DRAW_CUBE;
+            initMenuChange(1, "Cycle Models - Draw Sphere [SPACE]", ' ');
             break;
         }
-        case ' ': // handle space key to cycle through available models
+        case DRAW_SPHERE:
         {
-            CURRENT_DRAW_MODEL = DRAW_TYPE((CURRENT_DRAW_MODEL+1) % 3);
- 
-            switch (CURRENT_DRAW_MODEL)
-            {
-                case DRAW_CUBE:
-                {
-                    CURRENT_DRAW_MODEL = DRAW_CUBE;
-                    initMenuChange(1, "Cycle Models - Draw Sphere [SPACE]", ' ');
-                    break;
-                }
-                case DRAW_SPHERE:
-                {
-                    CURRENT_DRAW_MODEL = DRAW_SPHERE;
-                    initMenuChange(1, "Cycle Models - Draw Teapot [SPACE]", ' ');
-                    break;
-                }
-                case DRAW_TEAPOT:
-                {
-                    CURRENT_DRAW_MODEL = DRAW_TEAPOT;
-                    initMenuChange(1, "Cycle Models - Draw Cube [SPACE]", ' ');
-                    break;
-                }
-            }
+            CURRENT_DRAW_MODEL = DRAW_SPHERE;
+            initMenuChange(1, "Cycle Models - Draw Teapot [SPACE]", ' ');
             break;
         }
-        case '\t': // handle tab key to cycle through available textures
+        case DRAW_TEAPOT:
         {
-            CURRENT_TEX++;
-            if (CURRENT_TEX >= 6) CURRENT_TEX = 0;
+            CURRENT_DRAW_MODEL = DRAW_TEAPOT;
+            initMenuChange(1, "Cycle Models - Draw Cube [SPACE]", ' ');
             break;
         }
-        case '1': // yoda texture
-        {
-            CURRENT_TEX = 0;
-            break;
         }
-        case '2': // wood texture
-        {
-            CURRENT_TEX = 1;
-            break;
-        }
-        case '3': // metal texture
-        {
-            CURRENT_TEX = 2;
-            break;
-        }
-        case '4': // stone texture
-        {
-            CURRENT_TEX = 3;
-            break;
-        }
-        case '5': // tiles texture
-        {
-            CURRENT_TEX = 4;
-            break;
-        }
-        case '6': // checker board texture
-        {
-            CURRENT_TEX = 5;
-            break;
-        }
-        case 'm': case 'M': // toggle modulation/replacement of material color
-        {
-            GLint location = glGetUniformLocation(PROGRAM_ID, "ReplaceColor");
-            GLint replace_color; // there is no glGetUniform for boolean types (use int)
-            glGetUniformiv(PROGRAM_ID, location, &replace_color);
-            glUniform1i(location, !replace_color);
-            break;
-        }
-        case 'r': case 'R': default: // reset settings
-        {
-            TrackBall::resetTransformation();
-            break;
-        }
+        break;
+    }
+    case '\t': // handle tab key to cycle through available textures
+    {
+        CURRENT_TEX++;
+        if (CURRENT_TEX >= 6) CURRENT_TEX = 0;
+        break;
+    }
+    case '1': // yoda texture
+    {
+        CURRENT_TEX = 0;
+        break;
+    }
+    case '2': // wood texture
+    {
+        CURRENT_TEX = 1;
+        break;
+    }
+    case '3': // metal texture
+    {
+        CURRENT_TEX = 2;
+        break;
+    }
+    case '4': // stone texture
+    {
+        CURRENT_TEX = 3;
+        break;
+    }
+    case '5': // tiles texture
+    {
+        CURRENT_TEX = 4;
+        break;
+    }
+    case '6': // checker board texture
+    {
+        CURRENT_TEX = 5;
+        break;
+    }
+    case 'm': case 'M': // toggle modulation/replacement of material color
+    {
+        GLint location = glGetUniformLocation(PROGRAM_ID, "ReplaceColor");
+        GLint replace_color; // there is no glGetUniform for boolean types (use int)
+        glGetUniformiv(PROGRAM_ID, location, &replace_color);
+        glUniform1i(location, !replace_color);
+        break;
+    }
+    case 'r': case 'R': default: // reset settings
+    {
+        TrackBall::resetTransformation();
+        break;
+    }
     }
     glutUpdateMenuCB(GLUT_MENU_NOT_IN_USE, 0, 0);
     glutPostRedisplay();
@@ -427,7 +398,7 @@ void glutKeyboardCB(unsigned char key, int x, int y)
 
 
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     // init GLUT/FLTK settings

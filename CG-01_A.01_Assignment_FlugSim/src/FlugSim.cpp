@@ -94,7 +94,7 @@ void initModel(float windowLength)
 
     /////////////////////////////////////////////////////////////////////////////////////////
     // define ground vertices
-    float length = windowLength* 2/3;
+    float length = windowLength * 2/3;
     GLfloat ground_vertices[] =
     {
         -length,  -windowLength,   length, 1.0f, //v0
@@ -204,7 +204,7 @@ void timerCB(int value) {
     aircraft.UpdatePhysics(value);
     
     if (aircraft.GetPos()[0] <= -windowLength* 2/3 || aircraft.GetPos()[0] >= windowLength * 2 / 3 ||
-        aircraft.GetPos()[1] <= -windowLength* 2/3 || aircraft.GetPos()[1] >= 1000 ||
+        aircraft.GetPos()[1] <= -windowLength      || aircraft.GetPos()[1] >= 1000 ||
         aircraft.GetPos()[2] <= -windowLength* 2/3 || aircraft.GetPos()[2] >= windowLength * 2 / 3)
     {
         //aircraft.Reset();
@@ -215,23 +215,22 @@ void timerCB(int value) {
 }
 
 /// <summary>
-/// Takes the plain's transform and returns a camera transform behind the plain
+/// Takes the plane's transform and returns a camera transform behind the plane
 /// </summary>
-/// <param name="plainPos">The position of the airplain</param>
-/// <param name="plainRot">The rotation matrix (as a Homogeneous Transformation) matrix</param>
+/// <param name="planePos">The position of the aircraft</param>
+/// <param name="planeRot">The rotation matrix (as a Homogeneous Transformation) matrix</param>
 /// <returns></returns>
-glm::mat4 GetCamTransform(glm::vec3 plainPos, glm::mat4 plainRot) {
-    glm::vec4 offset = glm::vec4(-240.0f, 20.0f, 0.0f, 1.0f);
+glm::mat4 GetCamTransform(glm::vec3 planePos, glm::mat4 planeRot) {
+    glm::vec4 offset = glm::vec4(-240.0f, 20.0f, 0.0f, 1.0f); // offset of camera behind aircraft (homogeneous matrix)
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-    offset = plainRot * offset;
-    up = plainRot * up;
+    offset = planeRot * offset;
+    up = planeRot * up;
     
-    glm::vec3 offset_rotated = glm::vec3(offset);
-    glm::vec3 up_rotated = glm::vec3(up);
+    glm::vec3 offset_rotated = glm::vec3(offset); // not homogeneous anymore
+    glm::vec3 up_rotated = glm::vec3(up);         // not homogeneous anymore
 
-    glm::vec3 camPos = plainPos + offset_rotated;
-    glm::vec3 targetLookAt = plainPos + up_rotated * 66.0f; //tested value to move the plain down in the view port...
-    cout << t << endl;
+    glm::vec3 camPos = planePos + offset_rotated;
+    glm::vec3 targetLookAt = planePos + up_rotated * 66.0f; //tested value to move the plane down in the view port...
     return glm::lookAt(camPos, targetLookAt, up_rotated);
 }
 
@@ -242,23 +241,26 @@ void glutDisplayCB(void)
     // clear window background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // change camera view
     glm::mat4 camRot = aircraft.GetRot();
     glm::vec4 camPos = aircraft.GetPos();
 
-    glm::mat4 plainTransform = camRot;
-    plainTransform[3][0] = camPos.x;
-    plainTransform[3][1] = camPos.y;
-    plainTransform[3][2] = camPos.z;
+    glm::mat4 planeTransform = camRot;
+    planeTransform[3][0] = camPos.x;
+    planeTransform[3][1] = camPos.y;
+    planeTransform[3][2] = camPos.z;
 
     glm::mat4 cameraTransform = TrackBall::getTransformation() * GetCamTransform(glm::vec3(camPos), camRot);
+
+
     //////////////
-    // Airplane //
+    // Aircraft //
     //////////////
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(cameraTransform));
 
-    plainTransform = cameraTransform * plainTransform;
+    planeTransform = cameraTransform * planeTransform;
 
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(plainTransform));
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(planeTransform));
 
     // bind VAO to current drawing context
     glBindVertexArray(VAO[0]);
@@ -392,19 +394,19 @@ void glutUpdateMenuCB(int status, int x, int y)
 void glutMenuCB(int key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
-    double delta = .1;
+    double delta = .05;
     switch (key)
     {
-        case 't':
-        t += 0.1;
-        break;
+        //case 't': // key for testing
+        //t += 0.1;
+        //break;
 
-        case 'b': //beset
+        //case 'T': // key for testing
+        //    t -= 0.1;
+        //    break;
+
+        case 'b': case 'B': //reset the view after mouse movements
             TrackBall::resetTransformation();
-            break;
-
-        case 'T':
-            t -= 0.1;
             break;
 
         case 32: //handles spacebar
@@ -491,6 +493,7 @@ void initMenu()
     glutAddMenuEntry("Yaw - [O]", 'O');
     glutAddMenuEntry("Velocity + [Spacebar]", '32');
     glutAddMenuEntry("Velocity - [M]", 'M');
+    glutAddMenuEntry("Reset View [B]", 'B');
     glutAddMenuEntry("Reset Settings [R]", 'R');
     glutAddMenuEntry("Exit [Q] or [ESC]", 'Q');
 
@@ -577,7 +580,7 @@ int main(int argc, char *argv[])
     // text message
     cout << "----------------------------------------------------------------" << endl;
     cout << "This is a small flight simulator." << endl;
-    cout << "You can control the paper plane with pitch, roll and yaw inputs." << endl;
+    cout << "You can control the paper aircraft with pitch, roll and yaw inputs." << endl;
     cout << "Key for pitching: W and S" << endl;
     cout << "Key for yawing: O and P" << endl;
     cout << "Key for rolling: A and S" << endl;

@@ -39,11 +39,12 @@ float t = 0.0f;
 
 glm::mat4 TheCameraView(1.0f);
 
-GLuint TEX_NAME;
+GLuint TEX_NAME[8];
+GLuint currentTex;
 
 int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
-string MENU_ENTRY_STR[3];
+string MENU_ENTRY_STR[4];
 
 float windowLength = 5000.0f;
 
@@ -392,7 +393,7 @@ void glutDisplayCB(void)
     glm::mat4 texture_matrix(1.0f);
 
     //// bind currently selected texture
-    glBindTexture(GL_TEXTURE_2D, TEX_NAME);
+    glBindTexture(GL_TEXTURE_2D, TEX_NAME[currentTex]);
     // setup texture matrix
     texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
     glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
@@ -406,7 +407,7 @@ void glutDisplayCB(void)
 }
 
 
-void initRendering(float windowLength)
+void initRendering()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     // set background color
@@ -424,8 +425,16 @@ void initRendering(float windowLength)
     glUniform1i(location, true);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
-    UtilImage::loadPNGTexture("../../png/world.png", &TEX_NAME); // Pointer to image data
- 
+    UtilImage::loadPNGTexture("../../png/water.png", &TEX_NAME[0]); // Pointer to image data
+    UtilImage::loadPNGTexture("../../png/abendrot.png", &TEX_NAME[1]); // Pointer to image data
+    UtilImage::loadPNGTexture("../../png/forest.png", &TEX_NAME[2]); // Pointer to image data
+    UtilImage::loadPNGTexture("../../png/wiese.png", &TEX_NAME[3]); // Pointer to image data
+    UtilImage::loadPNGTexture("../../png/space.png", &TEX_NAME[4]); // Pointer to image data
+    UtilImage::loadPNGTexture("../../png/mountain.png", &TEX_NAME[5]); // Pointer to image data
+    UtilImage::loadPNGTexture("../../png/hügel.png", &TEX_NAME[6]); // Pointer to image data
+    UtilImage::loadPNGTexture("../../png/dusk.png", &TEX_NAME[7]); // Pointer to image data
+
+
     // setup the camera view matrix
     TheCameraView = glm::lookAt(glm::vec3(0.0f, 10.0f, 10.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -468,29 +477,21 @@ void glutMenuCB(int key)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {
     double delta = .05;
-    double transDelta = 3;
+
     switch (key)
     {
-        //case 't': // key for testing
-        //t += 0.1;
-        //break;
-
-        //case 'T': // key for testing
-        //    t -= 0.1;
-        //    break;
-
         case 'b': case 'B': //reset the view after mouse movements
             TrackBall::resetTransformation();
             break;
 
         case 32: //handles spacebar
         {
-            aircraft.increaseVel(delta * 100);
+            aircraft.increaseVel(delta * 150);
             break;
         }
 
         case 'm': case 'M':
-            aircraft.increaseVel(-delta * 100);
+            aircraft.increaseVel(-delta * 150);
             break;
 
         // pitch around x-axis
@@ -533,32 +534,20 @@ void glutMenuCB(int key)
             break;
         }
 
+        // changing the texture of the skybox
+        case '\t': // handle tab key to cycle through available textures
+        {
+            currentTex++;
+            if (currentTex >= 7) currentTex = 0;
+            break;
+        }
+
         case 'q': case 'Q': case 27: // handle escape keys [q],[Q],[ESC] and exit
         {
             exit(0);
             break;
         }
 
-        case 'u':
-            TheCameraView[3][0] += transDelta;
-            break;
-        case 'j':
-            TheCameraView[3][0] -= transDelta;
-            break;
-        case 'h':
-            TheCameraView[3][2] -= transDelta;
-            break;
-        case 'k':
-            TheCameraView[3][2] += transDelta;
-            break;
-        case '.':
-            TheCameraView[3][1] += transDelta;
-            break;
-        case ',':
-            TheCameraView[3][1] -= transDelta;
-            break;
-
-        
         // Reset Settings
         case 'r': case 'R':
         {
@@ -587,6 +576,7 @@ void initMenu()
     glutAddMenuEntry("Yaw - [O]", 'O');
     glutAddMenuEntry("Velocity + [Spacebar]", '32');
     glutAddMenuEntry("Velocity - [M]", 'M');
+    glutAddMenuEntry("Cycle Textures [TAB]", '\t');
     glutAddMenuEntry("Reset View [B]", 'B');
     glutAddMenuEntry("Reset Settings [R]", 'R');
     glutAddMenuEntry("Exit [Q] or [ESC]", 'Q');
@@ -685,7 +675,7 @@ int main(int argc, char *argv[])
     std::cout << "----------------------------------------------------------------" << endl;
 
     // init application
-    initRendering(windowLength);
+    initRendering();
     initModel(windowLength);
     initMenu();
 

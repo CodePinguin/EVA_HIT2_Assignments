@@ -35,6 +35,7 @@ GLint COLOR_VEC3_LOCATION = 0;
 
 
 int FPS = 50;
+float t = 0.0f;
 
 glm::mat4 TheCameraView(1.0f);
 
@@ -44,7 +45,7 @@ int MENU_ENTRY = 0;
 int MENU_VALUE = 0;
 string MENU_ENTRY_STR[3];
 
-float windowLength = 100.0f;
+float windowLength = 1000.0f;
 
 // VAO
 GLuint VAO[2];
@@ -61,14 +62,14 @@ void initModel(float windowLength)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {   
     // definition of plane vertices
-    float width = 2.5f;
+    float width = 50.0f;
     GLfloat plane_vertices[] =
     {
-        -width,  0.0f,  -width, 1.0f,
-        -width,  0.0f,    0.0f, 1.0f,
-        -width,  0.0f,   width, 1.0f,
-         width,  0.0f,    0.0f, 1.0f,
-        -width, -width / 2, 0.0f, 1.0f
+        -width,  0.0f,  -width, 1.0f, //v0
+        -width,  0.0f,    0.0f, 1.0f, //v1
+        -width,  0.0f,   width, 1.0f, //v2
+         width,  0.0f,    0.0f, 1.0f, //v3
+        -width, -width/2, 0.0f, 1.0f  //v4
     };
 
 
@@ -79,7 +80,7 @@ void initModel(float windowLength)
         1.0f, 1.0f, 1.0f,
         1.0f, 1.0f, 0.0f,
         1.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 1.0f
+        0.0f, 0.0f, 1.0f 
     };
 
     // definition of plane face indices
@@ -93,13 +94,13 @@ void initModel(float windowLength)
 
     /////////////////////////////////////////////////////////////////////////////////////////
     // define ground vertices
-    float length = windowLength/2;
+    float length = windowLength* 2/3;
     GLfloat ground_vertices[] =
     {
-        -length,  -length,   length, 1.0f, //v0
-         length,  -length,   length, 1.0f, //v1
-         length,  -length,  -length, 1.0f, //v2
-        -length,  -length,  -length, 1.0f  //v3          
+        -length,  -windowLength,   length, 1.0f, //v0
+         length,  -windowLength,   length, 1.0f, //v1
+         length,  -windowLength,  -length, 1.0f, //v2
+        -length,  -windowLength,  -length, 1.0f  //v3          
     };
 
     GLfloat ground_colors[] =
@@ -202,15 +203,36 @@ void timerCB(int value) {
     //draw frame
     aircraft.UpdatePhysics(value);
     
-    if (aircraft.GetPos()[0] <= -50 || aircraft.GetPos()[0] >= 50 ||
-        aircraft.GetPos()[1] <= -50 || aircraft.GetPos()[1] >= 100 ||
-        aircraft.GetPos()[2] <= -50 || aircraft.GetPos()[2] >= 50)
+    if (aircraft.GetPos()[0] <= -windowLength* 2/3 || aircraft.GetPos()[0] >= windowLength * 2 / 3 ||
+        aircraft.GetPos()[1] <= -windowLength* 2/3 || aircraft.GetPos()[1] >= 1000 ||
+        aircraft.GetPos()[2] <= -windowLength* 2/3 || aircraft.GetPos()[2] >= windowLength * 2 / 3)
     {
-        aircraft.Reset();
+        //aircraft.Reset();
         std::cout << "You crashed, but you get another chance." << std::endl;
     }
 
     glutPostRedisplay();
+}
+
+/// <summary>
+/// Takes the plain's transform and returns a camera transform behind the plain
+/// </summary>
+/// <param name="plainPos">The position of the airplain</param>
+/// <param name="plainRot">The rotation matrix (as a Homogeneous Transformation) matrix</param>
+/// <returns></returns>
+glm::mat4 GetCamTransform(glm::vec3 plainPos, glm::mat4 plainRot) {
+    glm::vec4 offset = glm::vec4(-240.0f, 20.0f, 0.0f, 1.0f);
+    glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    offset = plainRot * offset;
+    up = plainRot * up;
+    
+    glm::vec3 offset_rotated = glm::vec3(offset);
+    glm::vec3 up_rotated = glm::vec3(up);
+
+    glm::vec3 camPos = plainPos + offset_rotated;
+    glm::vec3 targetLookAt = plainPos + up_rotated * 66.0f; //tested value to move the plain down in the view port...
+    cout << t << endl;
+    return glm::lookAt(camPos, targetLookAt, up_rotated);
 }
 
 
@@ -220,33 +242,21 @@ void glutDisplayCB(void)
     // clear window background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // apply trackball transformation to modelview matrix
-    glm::mat4 mouse = TrackBall::getTransformation();
-    //mouse[3][3] = .5; // zoom in
+    glm::mat4 camRot = aircraft.GetRot();
+    glm::vec4 camPos = aircraft.GetPos();
 
-    // change camera view
-    /* glm::mat4 camRot = aircraft.GetRot();
-     glm::vec4 camPos = aircraft.GetPos();
-     camRot[3][0] = camPos.x;
-     camRot[3][1] = camPos.y;
-     camRot[3][2] = camPos.z;
-     camRot[3][3] = 1;
-     mouse = TheCameraView * inverse(camRot);
-     std::cout << mouse[3][3] << std::endl;*/
+    glm::mat4 plainTransform = camRot;
+    plainTransform[3][0] = camPos.x;
+    plainTransform[3][1] = camPos.y;
+    plainTransform[3][2] = camPos.z;
 
+    glm::mat4 cameraTransform = TrackBall::getTransformation() * GetCamTransform(glm::vec3(camPos), camRot);
     //////////////
     // Airplane //
     //////////////
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(cameraTransform));
 
-
-    glm::mat4 plainTransform = aircraft.GetRot();
-    glm::vec4 currentPos = aircraft.GetPos();
-    plainTransform[3][0] = currentPos.x;
-    plainTransform[3][1] = currentPos.y;
-    plainTransform[3][2] = currentPos.z;
-
-    plainTransform = mouse * plainTransform;
+    plainTransform = cameraTransform * plainTransform;
 
     glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(plainTransform));
 
@@ -268,7 +278,7 @@ void glutDisplayCB(void)
     // setup texture matrix
     texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, 1.0f, 1.0f));
     glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(mouse));
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(cameraTransform));
 
     glBindVertexArray(VAO[1]);
     glDrawElements(GL_TRIANGLES, GROUND_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
@@ -342,7 +352,7 @@ void initRendering(float windowLength)
     UtilImage::loadPNGTexture("../../png/map.png", &TEX_NAME); // Pointer to image data
     
     // setup the camera view matrix
-    TheCameraView = glm::lookAt(glm::vec3(0.0f, 0.0f, 8.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    TheCameraView = glm::lookAt(glm::vec3(-100.0f, -666.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // get modelview matrix uniform location
     MODELVIEW_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matModelView");
@@ -354,7 +364,7 @@ void initRendering(float windowLength)
     TEXTURE_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matTexture");
 
     // setup orthographic projection matrix
-    glm::mat4 projection = glm::ortho(-windowLength, windowLength, -windowLength, windowLength, -windowLength, windowLength);
+    glm::mat4 projection = glm::perspective(glm::radians<float>(60.0f), 1.0f, 1.0f, 2000.0f);
     glUniformMatrix4fv(PROJECTION_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
@@ -385,40 +395,51 @@ void glutMenuCB(int key)
     double delta = .1;
     switch (key)
     {
+        case 't':
+        t += 0.1;
+        break;
+
+        case 'b': //beset
+            TrackBall::resetTransformation();
+            break;
+
+        case 'T':
+            t -= 0.1;
+            break;
+
         case 32: //handles spacebar
         {
-            aircraft.increaseVel(delta * 3);
+            aircraft.increaseVel(delta * 100);
             break;
         }
 
-        case 'm':
-        case 'M':
-            aircraft.increaseVel(-delta * 3);
+        case 'm': case 'M':
+            aircraft.increaseVel(-delta * 100);
             break;
 
         // pitch around x-axis
         case 'w': case 'W':
         {
-            aircraft.IncreaseAngle(2, delta);
+            aircraft.IncreaseAngle(2, -delta);
             break;
         }
 
         case 's': case 'S':
         {
-            aircraft.IncreaseAngle(2, -delta);
+            aircraft.IncreaseAngle(2, delta);
             break;
         }
 
         // roll around y-axis
         case 'a': case 'A':
         {
-            aircraft.IncreaseAngle(0, delta);
+            aircraft.IncreaseAngle(0, -delta);
             break;
         }
 
         case 'd': case 'D':
         {
-            aircraft.IncreaseAngle(0, -delta);
+            aircraft.IncreaseAngle(0, delta);
             break;
         }
 
@@ -464,10 +485,12 @@ void initMenu()
     glutCreateMenu(glutMenuCB);
     glutAddMenuEntry("Pitch + [W]", 'W');
     glutAddMenuEntry("Pitch - [S]", 'S');
-    glutAddMenuEntry("Roll + [A]", 'A');
-    glutAddMenuEntry("Roll - [D]", 'D');
-    glutAddMenuEntry("Yaw + [O]", 'O');
-    glutAddMenuEntry("Yaw - [P]", 'P');
+    glutAddMenuEntry("Roll + [D]", 'D');
+    glutAddMenuEntry("Roll - [A]", 'A');
+    glutAddMenuEntry("Yaw + [P]", 'P');
+    glutAddMenuEntry("Yaw - [O]", 'O');
+    glutAddMenuEntry("Velocity + [Spacebar]", '32');
+    glutAddMenuEntry("Velocity - [M]", 'M');
     glutAddMenuEntry("Reset Settings [R]", 'R');
     glutAddMenuEntry("Exit [Q] or [ESC]", 'Q');
 
@@ -493,7 +516,7 @@ int main(int argc, char *argv[])
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH | FL_OPENGL3);
     glutInitWindowPosition(100, 100);
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(750, 750);
     glutCreateWindow("Flight Simulator");
 
     // register extension wrapper library (GLEW)

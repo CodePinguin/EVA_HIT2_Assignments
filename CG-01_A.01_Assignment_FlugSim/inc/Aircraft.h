@@ -11,7 +11,7 @@ class Aircraft
 private:
 	glm::mat4 currentTransform;
 	glm::vec4 currentPos;
-	glm::mat4 GetR(int axes);
+	glm::mat4 GetR(int axes, float angle);
 	float delta;
 	float velocity;
 	int changedAxis = -1;

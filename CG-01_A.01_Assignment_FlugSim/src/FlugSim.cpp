@@ -25,7 +25,7 @@ using namespace std;
 #include "../../_COMMON/inc/UtilGLSL.h"
 #include "../../_COMMON/inc/UtilImage.h"
 #include "../../_COMMON/inc/vbosphere.h"
-#include "../../_COMMON/src/vbosphere.cpp"
+//#include "../../_COMMON/src/vbosphere.cpp"
 
 #include "../inc/Aircraft.h"
 

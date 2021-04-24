@@ -14,18 +14,16 @@ void Aircraft::Reset() {
 	velocity = 0;
 	
 	currentTransform = glm::mat4(1.0f);
-	currentPos = glm::vec4(0, 0.0f, 0, 0);
+	currentPos = glm::vec4(-1000, 500.0f, 0, 0);
 }
 
-glm::mat4 Aircraft::GetRot() {
-
+glm::mat4 Aircraft::GetRot() 
+{
     // setup modelview matrix
-
 	if (changedAxis >= 0) {
 		currentTransform = currentTransform * GetR(changedAxis, delta);
 		changedAxis = -1;
 	}
-
 
     return currentTransform;
 }
@@ -34,9 +32,8 @@ glm::vec4 Aircraft::GetPos() {
 	return currentPos;
 }
 
-glm::mat4 Aircraft::GetR(int axes, float angle) {
-
-
+glm::mat4 Aircraft::GetR(int axes, float angle) 
+{
 	double c1 = cos(angle), s1 = sin(angle);
 
 	switch (axes) {

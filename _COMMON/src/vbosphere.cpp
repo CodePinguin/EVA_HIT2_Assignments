@@ -96,9 +96,9 @@ void VBOSphere::generateVerts(float * verts, float * norms, float * tex, GLuint 
             norms[idx] = nx; norms[idx+1] = ny; norms[idx+2] = nz;
             idx += 3;
 
-                        tex[tIdx] = s;
-                        tex[tIdx+1] = t;
-                        tIdx += 2;
+            tex[tIdx] = s;
+            tex[tIdx+1] = t;
+            tIdx += 2;
         }
     }
 

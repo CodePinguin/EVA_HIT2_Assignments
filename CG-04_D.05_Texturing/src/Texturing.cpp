@@ -71,15 +71,15 @@ void glutDisplayCB(void)
     glm::mat4 texture_matrix(1.0f);
 
     // bind currently selected texture
-    glBindTexture(GL_TEXTURE_2D, TEX_NAME[CURRENT_TEX]);
+    //glBindTexture(GL_TEXTURE_2D, TEX_NAME[CURRENT_TEX]);
 
     switch (CURRENT_DRAW_MODEL)
     {
     case DRAW_CUBE:
     {
-        // setup texture matrix
-        texture_matrix = glm::scale(texture_matrix, glm::vec3(2.0f, -2.0f, 2.0f));
-        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+        //// setup texture matrix
+        //texture_matrix = glm::scale(texture_matrix, glm::vec3(2.0f, -2.0f, 2.0f));
+        //glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
 
         // scale cube
         modelview = glm::scale(modelview, glm::vec3(3.0f, 3.0f, 3.0f));
@@ -106,10 +106,10 @@ void glutDisplayCB(void)
     }
     case DRAW_TEAPOT:
     {
-        // setup texture matrix
-        texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
-        texture_matrix = glm::rotate(texture_matrix, glm::radians<float>(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
+        //// setup texture matrix
+        //texture_matrix = glm::scale(texture_matrix, glm::vec3(1.0f, -1.0f, 1.0f));
+        //texture_matrix = glm::rotate(texture_matrix, glm::radians<float>(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        //glUniformMatrix4fv(TEXTURE_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(texture_matrix));
 
         // move teapot into origin and rotate 270 degree around x-axis (post multiply order)
         modelview = glm::rotate(modelview, glm::radians<float>(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -229,6 +229,7 @@ void initRendering()
 
     // get texture matrix uniform location
     TEXTURE_MAT4_LOCATION = glGetUniformLocation(PROGRAM_ID, "matTexture");
+    
 }
 
 

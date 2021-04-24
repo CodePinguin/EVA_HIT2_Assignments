@@ -11,6 +11,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+
 // system includes ////////////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include <string>
@@ -23,6 +24,8 @@ using namespace std;
 #include "../../_COMMON/inc/UtilOpenGL.h"
 #include "../../_COMMON/inc/UtilGLSL.h"
 #include "../../_COMMON/inc/UtilImage.h"
+#include "../../_COMMON/inc/vbosphere.h"
+#include "../../_COMMON/src/vbosphere.cpp"
 
 #include "../inc/Aircraft.h"
 
@@ -38,6 +41,8 @@ int FPS = 50;
 float t = 0.0f;
 
 glm::mat4 TheCameraView(1.0f);
+VBOSphere* TheSphere = nullptr;
+//enum DRAW_TYPE DRAW_SPHERE;
 
 GLuint TEX_NAME[8];
 GLuint currentTex;
@@ -47,6 +52,9 @@ int MENU_VALUE = 0;
 string MENU_ENTRY_STR[4];
 
 float windowLength = 5000.0f;
+float radius = 100.0f;
+
+bool keys[8];
 
 // VAO
 GLuint VAO[2];
@@ -59,9 +67,12 @@ GLuint PLANE_INDICES_COUNT = 0;
 Aircraft aircraft;
 
 
-void initModel(float windowLength)
+void initModel(float windowLength, float radius)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 {   
+    // obstacle
+    TheSphere = new VBOSphere(radius, 60, 30);
+
     // definition of plane vertices
     float width = 50.0f;
     float thick = 1.5f;
@@ -82,7 +93,6 @@ void initModel(float windowLength)
          width,     thick,        0.0f,   1.0f, //v8
 
         -width,  -width/4, -thickShaft, 1.0f  //v9 // shaft left
-        
     };
 
 
@@ -311,6 +321,21 @@ void initModel(float windowLength)
 
 }
 
+void UpdateKeyArray() {
+
+
+    keys[0] = (GetAsyncKeyState(87/*w*/)        & 1);
+    keys[1] = (GetAsyncKeyState(83/*s*/)       & 1);
+    keys[2] = (GetAsyncKeyState(65/*a*/)        & 1);
+    keys[3] = (GetAsyncKeyState(68/*d*/)       & 1);
+    keys[4] = (GetAsyncKeyState(32/*space*/) & 1);
+    keys[5] = (GetAsyncKeyState(77/*m*/)       & 1);
+    keys[6] = (GetAsyncKeyState(79/*o*/)       & 1);
+    keys[7] = (GetAsyncKeyState(80/*p*/)       & 1);
+
+    //std::cout << GetAsyncKeyState(32/*space*/) << std::endl;
+}
+
 
 void timerCB(int value) { 
     // update physics the whole time
@@ -319,11 +344,12 @@ void timerCB(int value) {
     glutTimerFunc(sleep_time, timerCB, value + sleep_time);
 
     //draw frame
-    aircraft.UpdatePhysics(value);
-    
-    if (aircraft.GetPos()[0] <= -windowLength || aircraft.GetPos()[0] >= windowLength ||
-        aircraft.GetPos()[1] <= -windowLength || aircraft.GetPos()[1] >= windowLength ||
-        aircraft.GetPos()[2] <= -windowLength || aircraft.GetPos()[2] >= windowLength)
+    aircraft.UpdatePhysics(value);  
+
+    if (glm::length(glm::vec3(aircraft.GetPos())) < radius || // crash with obstacle ||
+        abs(aircraft.GetPos()[0]) >= windowLength || // out of world
+        abs(aircraft.GetPos()[1]) >= windowLength ||
+        abs(aircraft.GetPos()[2]) >= windowLength)
     {
         aircraft.Reset();
         std::cout << "You crashed, but you get another chance." << std::endl;
@@ -369,6 +395,7 @@ void glutDisplayCB(void)
     planeTransform[3][2] = camPos.z;
 
     glm::mat4 cameraTransform = TrackBall::getTransformation() * GetCamTransform(glm::vec3(camPos), camRot); //*TheCameraView;
+ 
 
     //////////////
     // Aircraft //
@@ -383,6 +410,12 @@ void glutDisplayCB(void)
     glBindVertexArray(VAO[0]);
     glDrawElements(GL_TRIANGLES, PLANE_INDICES_COUNT, GL_UNSIGNED_SHORT, nullptr);
 
+    //////////////
+    // Obstacle //
+    //////////////
+    glBindTexture(GL_TEXTURE_2D, TEX_NAME[7]);
+    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(cameraTransform));
+    TheSphere->draw();
 
 
     //////////////
@@ -426,14 +459,13 @@ void initRendering()
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
     UtilImage::loadPNGTexture("../../png/water.png", &TEX_NAME[0]); // Pointer to image data
-    UtilImage::loadPNGTexture("../../png/abendrot.png", &TEX_NAME[1]); // Pointer to image data
-    UtilImage::loadPNGTexture("../../png/forest.png", &TEX_NAME[2]); // Pointer to image data
-    UtilImage::loadPNGTexture("../../png/wiese.png", &TEX_NAME[3]); // Pointer to image data
-    UtilImage::loadPNGTexture("../../png/space.png", &TEX_NAME[4]); // Pointer to image data
-    UtilImage::loadPNGTexture("../../png/mountain.png", &TEX_NAME[5]); // Pointer to image data
-    UtilImage::loadPNGTexture("../../png/hügel.png", &TEX_NAME[6]); // Pointer to image data
-    UtilImage::loadPNGTexture("../../png/dusk.png", &TEX_NAME[7]); // Pointer to image data
-
+    UtilImage::loadPNGTexture("../../png/abendrot.png", &TEX_NAME[1]);
+    UtilImage::loadPNGTexture("../../png/forest.png", &TEX_NAME[2]);
+    UtilImage::loadPNGTexture("../../png/space.png", &TEX_NAME[3]); 
+    UtilImage::loadPNGTexture("../../png/mountain.png", &TEX_NAME[4]); 
+    UtilImage::loadPNGTexture("../../png/hügel.png", &TEX_NAME[5]);
+    UtilImage::loadPNGTexture("../../png/dusk.png", &TEX_NAME[6]);
+    UtilImage::loadPNGTexture("../../png/stone.png", &TEX_NAME[7]); 
 
     // setup the camera view matrix
     TheCameraView = glm::lookAt(glm::vec3(0.0f, 10.0f, 10.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -640,6 +672,7 @@ int main(int argc, char *argv[])
     glutDisplayFunc(glutDisplayCB);
     glutTimerFunc(0, timerCB, 0);
     glutKeyboardFunc(glutKeyboardCB);
+    
     glutMenuStatusFunc(glutUpdateMenuCB);
 
     // register mouse handler callbacks
@@ -676,7 +709,7 @@ int main(int argc, char *argv[])
 
     // init application
     initRendering();
-    initModel(windowLength);
+    initModel(windowLength, radius);
     initMenu();
 
     // entering GLUT/FLTK main event loop until user exits

@@ -321,21 +321,6 @@ void initModel(float windowLength, float radius)
 
 }
 
-void UpdateKeyArray() {
-
-
-    keys[0] = (GetAsyncKeyState(87/*w*/)        & 1);
-    keys[1] = (GetAsyncKeyState(83/*s*/)       & 1);
-    keys[2] = (GetAsyncKeyState(65/*a*/)        & 1);
-    keys[3] = (GetAsyncKeyState(68/*d*/)       & 1);
-    keys[4] = (GetAsyncKeyState(32/*space*/) & 1);
-    keys[5] = (GetAsyncKeyState(77/*m*/)       & 1);
-    keys[6] = (GetAsyncKeyState(79/*o*/)       & 1);
-    keys[7] = (GetAsyncKeyState(80/*p*/)       & 1);
-
-    //std::cout << GetAsyncKeyState(32/*space*/) << std::endl;
-}
-
 
 void timerCB(int value) { 
     // update physics the whole time
@@ -672,7 +657,6 @@ int main(int argc, char *argv[])
     glutDisplayFunc(glutDisplayCB);
     glutTimerFunc(0, timerCB, 0);
     glutKeyboardFunc(glutKeyboardCB);
-    
     glutMenuStatusFunc(glutUpdateMenuCB);
 
     // register mouse handler callbacks

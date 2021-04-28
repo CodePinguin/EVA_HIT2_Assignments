@@ -19,11 +19,7 @@ void Aircraft::Reset() {
 
 glm::mat4 Aircraft::GetRot() 
 {
-    // setup modelview matrix
-	if (changedAxis >= 0) {
-		currentTransform = currentTransform * GetR(changedAxis, delta);
-		changedAxis = -1;
-	}
+    
 
     return currentTransform;
 }
@@ -72,6 +68,12 @@ void Aircraft::IncreaseAngle(int axes, double value) {
 void Aircraft::UpdatePhysics(unsigned int sim_time) {
 	unsigned int delta_t = sim_time - last_time;
 	float delta_t_sec = delta_t / 1000.0;
+
+	// process key input
+	if (changedAxis >= 0) {
+		currentTransform = currentTransform * GetR(changedAxis, delta);
+		changedAxis = -1;
+	}
 
 	//Update position
 	glm::vec4 translate(velocity * delta_t_sec, 0, 0, 1);

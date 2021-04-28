@@ -321,21 +321,6 @@ void initModel(float windowLength, float radius)
 
 }
 
-void UpdateKeyArray() {
-
-
-    keys[0] = (GetAsyncKeyState(87/*w*/)        & 1);
-    keys[1] = (GetAsyncKeyState(83/*s*/)       & 1);
-    keys[2] = (GetAsyncKeyState(65/*a*/)        & 1);
-    keys[3] = (GetAsyncKeyState(68/*d*/)       & 1);
-    keys[4] = (GetAsyncKeyState(32/*space*/) & 1);
-    keys[5] = (GetAsyncKeyState(77/*m*/)       & 1);
-    keys[6] = (GetAsyncKeyState(79/*o*/)       & 1);
-    keys[7] = (GetAsyncKeyState(80/*p*/)       & 1);
-
-    //std::cout << GetAsyncKeyState(32/*space*/) << std::endl;
-}
-
 
 void timerCB(int value) { 
     // update physics the whole time
@@ -365,16 +350,23 @@ void timerCB(int value) {
 /// <param name="planeRot">The rotation matrix (as a Homogeneous Transformation) matrix</param>
 /// <returns></returns>
 glm::mat4 GetCamTransform(glm::vec3 planePos, glm::mat4 planeRot) {
+    // offset in plane coordinates
     glm::vec4 offset = glm::vec4(-240.0f, 30.0f, 0.0f, 1.0f); // offset of camera behind aircraft (homogeneous matrix)
     glm::vec4 up = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+    
+    // map to world coordinates
     offset = planeRot * offset;
     up = planeRot * up;
     
+    // convert to vec3
     glm::vec3 offset_rotated = glm::vec3(offset); // not homogeneous anymore
     glm::vec3 up_rotated = glm::vec3(up);         // not homogeneous anymore
 
+    // calc target positions
     glm::vec3 camPos = planePos + offset_rotated;
     glm::vec3 targetLookAt = planePos + up_rotated * 66.0f; //tested value to move the plane down in the view port...
+    
+    //get mat4 using lookAt
     return glm::lookAt(camPos, targetLookAt, up_rotated);
 }
 
@@ -400,7 +392,6 @@ void glutDisplayCB(void)
     //////////////
     // Aircraft //
     //////////////
-    glUniformMatrix4fv(MODELVIEW_MAT4_LOCATION, 1, GL_FALSE, glm::value_ptr(cameraTransform));
 
     planeTransform = cameraTransform * planeTransform;
 
@@ -672,7 +663,6 @@ int main(int argc, char *argv[])
     glutDisplayFunc(glutDisplayCB);
     glutTimerFunc(0, timerCB, 0);
     glutKeyboardFunc(glutKeyboardCB);
-    
     glutMenuStatusFunc(glutUpdateMenuCB);
 
     // register mouse handler callbacks

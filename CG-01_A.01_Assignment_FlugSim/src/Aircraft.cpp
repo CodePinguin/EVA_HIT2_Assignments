@@ -1,32 +1,30 @@
 #include "../inc/Aircraft.h"
 
-Aircraft::Aircraft() {
+Aircraft::Aircraft() 
+{
     Reset();
 }
 
 
-void Aircraft::increaseVel(double value)
+void Aircraft::Reset() 
 {
-	velocity += value;
-}
-
-void Aircraft::Reset() {
 	velocity = 0;
-	
 	currentTransform = glm::mat4(1.0f);
 	currentPos = glm::vec4(-1000, 500.0f, 0, 0);
 }
 
+
 glm::mat4 Aircraft::GetRot() 
 {
-    
-
     return currentTransform;
 }
 
-glm::vec4 Aircraft::GetPos() {
+
+glm::vec4 Aircraft::GetPos() 
+{
 	return currentPos;
 }
+
 
 glm::mat4 Aircraft::GetR(int axes, float angle) 
 {
@@ -60,10 +58,18 @@ glm::mat4 Aircraft::GetR(int axes, float angle)
 	}
 }
 
+
 void Aircraft::IncreaseAngle(int axes, double value) {
 	changedAxis = axes;
 	delta = value;
 }
+
+
+void Aircraft::increaseVel(double value)
+{
+	velocity += value;
+}
+
 
 void Aircraft::UpdatePhysics(unsigned int sim_time) {
 	unsigned int delta_t = sim_time - last_time;

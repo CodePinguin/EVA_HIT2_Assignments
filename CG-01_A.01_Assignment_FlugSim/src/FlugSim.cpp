@@ -25,7 +25,7 @@ using namespace std;
 #include "../../_COMMON/inc/UtilGLSL.h"
 #include "../../_COMMON/inc/UtilImage.h"
 #include "../../_COMMON/inc/vbosphere.h"
-//#include "../../_COMMON/src/vbosphere.cpp"
+#include "../../_COMMON/src/vbosphere.cpp"
 
 #include "../inc/Aircraft.h"
 
@@ -42,7 +42,6 @@ float t = 0.0f;
 
 glm::mat4 TheCameraView(1.0f);
 VBOSphere* TheSphere = nullptr;
-//enum DRAW_TYPE DRAW_SPHERE;
 
 GLuint TEX_NAME[8];
 GLuint currentTex;
